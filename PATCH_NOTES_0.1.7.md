@@ -18,7 +18,10 @@ Fecha: 2026-10-24
     vía oficial con tu propia app de Azure o la cuenta local.
 - **Icono de Halloween** en la aplicación, la ventana y los instaladores.
 - **Windows 0.1.7**: instalador NSIS x64 compilado con `cargo-xwin` desde Linux.
-  Requiere Windows 10/11 y WebView2. Windows 8/8.1 no es compatible.
+  Requiere Windows 10/11 y WebView2. Windows 8/8.1 no es compatible. El
+  instalador no tiene firma Authenticode (no hay certificado de code signing),
+  así que SmartScreen puede mostrar un aviso; la firma del actualizador sí está
+  incluida.
 - **Linux 0.1.7**: AppImage firmado y actualización automática.
 
 ## Cuenta local
