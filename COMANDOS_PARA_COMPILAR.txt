@@ -1,0 +1,31 @@
+========================================
+COMANDOS RÁPIDOS — NEBULA LAUNCHER
+========================================
+
+Instalar Rust (solo la primera vez, si falta):
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    export PATH="$HOME/.cargo/bin:$PATH"
+
+Compilar la versión actual:
+    cd /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
+    export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
+    npm run tauri build
+
+Salida:
+    src-tauri/target/release/bundle/appimage/
+
+Publicar una versión nueva:
+    ./scripts/bump-version.sh
+    export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
+    npm run tauri build
+    GITHUB_REPO="DevAldx/nebula-launcher" ./create_latest_json.sh
+    # Crear release vX.Y.Z y subir .AppImage, .sig y latest.json
+
+Ver la guía completa:
+    INSTRUCCIONES_ACTUALIZACION.txt
+    INSTRUCCIONES_WINDOWS.txt   (instalador NSIS y CI)
+
+Compilar en Windows (PowerShell, en un PC Windows):
+    $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content -Raw "$HOME\.tauri\nebula-launcher.key"
+    .\scripts\build-windows.ps1
+    # Salida: src-tauri\target\release\bundle\nsis\

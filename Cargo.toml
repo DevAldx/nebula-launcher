@@ -1,0 +1,15 @@
+# Workspace de crates puros (sin Tauri). `src-tauri` es su propio workspace
+# (lo exige Tauri) y depende de `nebula-core` por ruta.
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+exclude = ["src-tauri"]
+
+[workspace.package]
+version = "0.1.7"
+edition = "2021"
+license = "MIT"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"

@@ -1,0 +1,11 @@
+{
+  "version": "0.1.6",
+  "notes": "Cuenta local sin Azure, instalación automática del Java de cada instancia, fondo remoto al importar, iconos vectoriales y soporte de Windows (código y CI).",
+  "pub_date": "2026-10-25T03:42:21Z",
+  "platforms": {
+    "linux-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTWIzdEd4SzNoeWlKTFNiT2hreEdScHRkODFFZThSMW9XSDZTbXkvbWRDNEVKb1ByVi9mSENrREhGdmhvOTBnQkhaL2swY3VwUWMyMEtvQm5QWEFOUmdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyODk5NzI4CWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMS42X2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4xLjYKcFRjMGw0d3RlZjUraDluK2UrTW9JTmw2YkNxMXM4eUVYaHdXOWhrYld6RDkrWTdrZzY2aTNZRzFrNHlaM0JpMTBKdFBFZVFtTkQrSVlrdkdZVXN1RFE9PQo=",
+      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.1.6/Nebula.Launcher_0.1.6_amd64.AppImage"
+    }
+  }
+}

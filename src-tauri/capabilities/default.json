@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permisos mínimos: solo los comandos IPC propios de Nebula. Sin fs, shell ni http desde el frontend.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

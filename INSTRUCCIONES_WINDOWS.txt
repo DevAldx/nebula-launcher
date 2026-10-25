@@ -1,0 +1,225 @@
+========================================
+NEBULA LAUNCHER — WINDOWS
+========================================
+
+Última revisión: versión 0.1.7
+Carpeta del proyecto (Linux):
+  /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
+Repo de releases:
+  https://github.com/DevAldx/nebula-launcher
+
+IMPORTANTE
+  La versión 0.1.7 se compiló desde Linux con cargo-xwin + NSIS. El .exe y su
+  .sig existen, pero NO se han probado en un Windows 10/11 real. Hasta que se
+  pruebe, no se puede afirmar que el instalador funcione en todas las máquinas.
+
+  Windows 8/8.1 no es compatible: Tauri 2 y el WebView2 actual requieren
+  Windows 10/11.
+
+  La clave privada de firma NUNCA se sube al repositorio ni se comparte.
+  Para CI se usan los secretos del repositorio.
+
+
+----------------------------------------
+1. QUÉ ESTÁ PREPARADO
+----------------------------------------
+
+- Rutas de datos con `directories` (AppData/Local en Windows).
+- Detección de `java.exe` en JAVA_HOME, PATH, Program Files (Java, Adoptium,
+  Microsoft, Zulu, BellSoft, Corretto), LOCALAPPDATA y data/java.
+- Instalación automática del JRE de Temurin para Windows (zip de Adoptium,
+  verificado con SHA-256 y extraído en data/java/temurin-<mayor>).
+- Classpath con `;` en Windows.
+- Escritura atómica compatible con Windows (rename no reemplaza archivos).
+- Abrir carpetas con explorer.exe y URLs con rundll32 (sin shell intermedio).
+- Iconos .ico/.icns, icono de Halloween y configuración NSIS en
+  src-tauri/tauri.windows.conf.json.
+- Script local scripts/build-windows.ps1 y CI .github/workflows/build-windows.yml.
+- Compilación cruzada desde Linux con cargo-xwin (la usada para 0.1.7).
+
+
+----------------------------------------
+2. COMPILAR EN UN PC WINDOWS (recomendado para probar)
+----------------------------------------
+
+Requisitos:
+  1. Rust (https://rustup.rs) con el toolchain MSVC.
+     En PowerShell:  rustup default stable-msvc
+  2. Node.js 20 o superior.
+  3. Microsoft Visual Studio Build Tools con "Desarrollo para el escritorio
+     con C++".
+  4. WebView2 Runtime (Windows 10/11 lo trae; si falta, el instalador NSIS
+     puede descargarlo).
+
+Desde la raíz del proyecto, en PowerShell:
+
+  # Cargar la clave privada solo en esta sesión (no la guardes en el repo)
+  $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content -Raw "$HOME\.tauri\nebula-launcher.key"
+
+  # Si tu clave tuviera contraseña:
+  # $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = "tu-contraseña"
+
+  .\scripts\build-windows.ps1
+
+O manualmente:
+
+  npm ci
+  npm run tauri build -- --bundles nsis
+
+Resultado:
+  src-tauri\target\release\bundle\nsis\
+    Nebula Launcher_0.1.7_x64-setup.exe
+    Nebula Launcher_0.1.7_x64-setup.exe.sig
+
+El .sig se genera solo porque bundle.createUpdaterArtifacts = true. Si no
+aparece, el build no vio TAURI_SIGNING_PRIVATE_KEY.
+
+La configuración NSIS instala para el usuario actual (sin pedir administrador)
+y ofrece español e inglés.
+
+
+----------------------------------------
+2b. COMPILAR DESDE LINUX (cargo-xwin)
+----------------------------------------
+
+Requisitos: Rust, clang/lld, Node 20, cargo-xwin y NSIS 3.11 para Linux.
+Tauri busca el ejecutable como `makensis.exe`; si solo tienes `makensis`,
+crea un wrapper en el PATH que exporte NSISDIR y ejecute el binario real.
+
+  export PATH="/ruta/al/wrapper:$HOME/.cargo/bin:$PATH"
+  export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
+  export XWIN_CACHE_DIR="$HOME/.cache/xwin-nebula"
+  npm run tauri build -- \
+    --runner cargo-xwin \
+    --target x86_64-pc-windows-msvc \
+    --bundles nsis
+
+Resultado:
+  src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/
+    Nebula Launcher_0.1.7_x64-setup.exe
+    Nebula Launcher_0.1.7_x64-setup.exe.sig
+
+Los avisos sobre `libcmt.amd64.pdb` son normales con cargo-xwin y no impiden
+el enlazado.
+
+
+----------------------------------------
+3. COMPILAR EN GITHUB ACTIONS (sin PC Windows)
+----------------------------------------
+
+El workflow ya está en .github/workflows/build-windows.yml, pero necesita que
+el código esté subido a GitHub (hoy el repo público solo tiene README) y estos
+secretos en Settings > Secrets and variables > Actions:
+
+  TAURI_SIGNING_PRIVATE_KEY           (contenido de nebula-launcher.key)
+  TAURI_SIGNING_PRIVATE_KEY_PASSWORD  (vacío si la clave no tiene contraseña;
+                                       GitHub no acepta secretos vacíos, así que
+                                       si no hay contraseña puedes omitirlo y
+                                       quitar la variable del workflow)
+
+Formas de lanzarlo:
+  - Manual: Actions > Compilar Windows > Run workflow.
+  - Con un tag: al publicar un tag vX.Y.Z (push tags) se compila solo.
+
+Descarga el artefacto "nebula-windows-nsis" desde la ejecución del workflow.
+Contiene el .exe y su .sig.
+
+Nota: el workflow usa `npm ci`; si falta package-lock.json, ejecuta
+`npm install` y súbelo. El lockfile ya está en el proyecto.
+
+Ojo: el workflow compila en windows-latest, que es x86_64. No genera ARM64.
+Si algún día hace falta ARM64, hay que añadir otro job con
+`--target aarch64-pc-windows-msvc` y subir su propio artefacto.
+
+
+----------------------------------------
+4. PUBLICAR LA VERSIÓN CON WINDOWS
+----------------------------------------
+
+El feed latest.json puede incluir Linux y Windows a la vez. El orden es:
+
+  cd /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
+  ./scripts/bump-version.sh                 # ya hecho para 0.1.7
+  export PATH="$HOME/.cargo/bin:$PATH"
+  export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
+  npm run tauri build                       # AppImage Linux firmado
+
+  # Copia los artefactos de Windows a una carpeta que create_latest_json.sh
+  # pueda encontrar, por ejemplo:
+  #   src-tauri/target/release/bundle/nsis/
+  # y después:
+  GITHUB_REPO="DevAldx/nebula-launcher" ./create_latest_json.sh
+
+  # Crear el release v0.1.7 y subir:
+  #   Linux:   *.AppImage, *.AppImage.sig
+  #   Windows: *-setup.exe, *-setup.exe.sig
+  #   latest.json
+
+En Tauri 2 el artefacto de actualización de Windows es el propio instalador
+NSIS (.exe) y su .sig. Los antiguos *.nsis.zip / *.msi.zip eran de Tauri 1
+o del modo "v1Compatible"; create_latest_json.sh también los acepta si
+alguna vez se generan.
+
+El script detecta los artefactos de Windows con estos patrones, en orden:
+  *.nsis.zip      (Tauri 1 / v1Compatible, si existiera)
+  *.msi.zip       (Tauri 1 / v1Compatible, si existiera)
+  *-setup.exe     (Tauri 2, NSIS)
+  *.msi
+y escribe la plataforma "windows-x86_64" en latest.json. Sube exactamente
+el mismo .exe al que apunta latest.json.
+
+Si compilas Windows en otro PC, copia el .exe y el .sig al proyecto Linux
+antes de generar latest.json, o edita latest.json a mano con la URL y la firma
+correctas. La URL debe usar el nombre real del asset en GitHub (GitHub cambia
+los espacios por puntos).
+
+
+----------------------------------------
+5. PROBAR EN WINDOWS
+----------------------------------------
+
+1. Ejecuta el instalador .exe en una cuenta de usuario normal.
+2. Abre Nebula Launcher desde el menú Inicio.
+3. Inicio > Iniciar sesión local: escribe un nombre (3-16 letras/números/_).
+   Debe aparecer "Cuenta local" y el aviso de online-mode=false.
+4. Ajustes > Cuenta > Microsoft heredado > Iniciar sesión con Microsoft:
+   - Debe mostrar un código y abrir https://www.microsoft.com/link.
+   - Al completar el login, debe volver a Nebula como "Microsoft heredado".
+   - Cierra y reabre Nebula: la cuenta debe seguir ahí (refresh token).
+   - Este método no requiere Azure; si Microsoft lo bloquea, prueba la vía
+     oficial con tu propio Client ID o la cuenta local.
+5. Crea o importa una instancia y pulsa Jugar.
+   - Si falta Java, debe descargar Temurin en data\java\temurin-<mayor>.
+   - El juego debe arrancar con el classpath correcto (separador `;`).
+6. Importa una instancia compartida con background_url y comprueba que
+   aparece el fondo y el nombre del manifiesto.
+7. Comprueba Ajustes > Actualizaciones y que la versión mostrada es 0.1.7.
+8. Si algo falla, guarda el log de la instancia y el mensaje exacto antes de
+   cambiar nada.
+
+
+----------------------------------------
+6. PROBLEMAS TÍPICOS
+----------------------------------------
+
+"linker link.exe not found"
+  Falta Visual Studio Build Tools con C++. Instálalo y reinicia PowerShell.
+
+"WebView2 not found"
+  Instala el Evergreen Runtime de Microsoft Edge WebView2. Windows 10/11
+  actualizado normalmente ya lo trae.
+
+"No se pudo descargar Java ..."
+  Comprueba que api.adoptium.net, github.com, objects.githubusercontent.com
+  y release-assets.githubusercontent.com son accesibles desde ese PC
+  (proxy, firewall o antivirus).
+
+"El instalador no está firmado"
+  Es normal si no configuraste la clave. Para que el updater acepte la versión,
+  el .sig debe generarse con la misma clave privada cuya pública está en
+  src-tauri/tauri.conf.json.
+
+"Windows SmartScreen"
+  Un instalador nuevo sin reputación puede mostrar un aviso. No es un error de
+  firma del updater; se reduce con el tiempo o con un certificado de código
+  (Nebula no lo tiene).

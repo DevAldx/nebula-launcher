@@ -1,0 +1,183 @@
+========================================
+NEBULA LAUNCHER — COMPILAR Y PUBLICAR ACTUALIZACIONES
+========================================
+
+Última revisión: versión 0.1.7
+Carpeta del proyecto: /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
+Repo de releases: https://github.com/DevAldx/nebula-launcher
+
+----------------------------------------
+0. QUÉ HACE EL SISTEMA
+----------------------------------------
+
+- Al arrancar, el launcher consulta un feed de actualizaciones firmado.
+- Si hay versión nueva, muestra un diálogo con las novedades.
+- "Actualizar ahora" descarga, verifica la firma, instala y reinicia.
+- También puedes comprobarlo a mano en Configuración > Actualizaciones.
+
+El feed es un archivo `latest.json` publicado en GitHub Releases.
+La firma evita que alguien pueda servirte una actualización falsa.
+
+
+----------------------------------------
+1. CLAVES (YA ESTÁN CREADAS)
+----------------------------------------
+
+Clave privada:  ~/.tauri/nebula-launcher.key      (SIN contraseña)
+Clave pública:  ~/.tauri/nebula-launcher.key.pub
+
+Copias en el Escritorio:
+  TAURI_SIGNING_PRIVATE_KEY.key    <- privada (NO compartir)
+  TAURI_SIGNING_PRIVATE_KEY.txt    <- privada (misma, en texto)
+  TAURI_SIGNING_PUBLIC_KEY.txt     <- pública
+
+La clave pública ya está puesta en src-tauri/tauri.conf.json
+(plugins > updater > pubkey). No hace falta tocarla.
+
+AVISO: la clave antigua (nebula-launcher-old.key) tenía una contraseña
+desconocida y no se podía usar para firmar. Se conserva solo por historial;
+no la uses.
+
+Si algún día pierdes la clave privada, tendrás que generar otra y publicar
+una última versión con la clave nueva incrustada. Guarda una copia segura.
+
+
+----------------------------------------
+2. SUBIR LA VERSIÓN
+----------------------------------------
+
+Cada cambio que publiques debe llevar una versión nueva:
+
+    cd /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
+    ./scripts/bump-version.sh
+
+    # 0.1.7 -> 0.1.8
+    # También: ./scripts/bump-version.sh minor   (0.2.0)
+    #           ./scripts/bump-version.sh major   (1.0.0)
+
+Actualiza package.json, package-lock.json, src-tauri/tauri.conf.json,
+src-tauri/Cargo.toml y la versión del workspace (nebula-core).
+
+
+----------------------------------------
+3. COMPILAR Y FIRMAR
+----------------------------------------
+
+    cd /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
+    export PATH="$HOME/.cargo/bin:$PATH"
+    export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
+    npm run tauri build
+
+Resultado en src-tauri/target/release/bundle/appimage/:
+
+    Nebula Launcher_0.1.7_amd64.AppImage
+    Nebula Launcher_0.1.7_amd64.AppImage.sig
+
+El .sig se genera solo porque bundle.createUpdaterArtifacts = true.
+Si no aparece el .sig, es que el build no vio TAURI_SIGNING_PRIVATE_KEY.
+
+El propio AppImage firmado es el artefacto que descarga el updater
+(en Linux acepta AppImage sin comprimir o .AppImage.tar.gz).
+
+En Windows (misma orden, en Windows):
+
+    npm run tauri build
+
+Genera instaladores NSIS/MSI y sus .zip + .sig según
+src-tauri/tauri.windows.conf.json.
+
+También se puede compilar Windows desde Linux con cargo-xwin y NSIS 3.11;
+el comando exacto está en INSTRUCCIONES_WINDOWS.txt, sección 2b. El
+instalador 0.1.7 se generó así, pero aún no se probó en un Windows real.
+
+
+----------------------------------------
+4. GENERAR latest.json
+----------------------------------------
+
+    cd /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
+    GITHUB_REPO="DevAldx/nebula-launcher" ./create_latest_json.sh
+
+Lee la versión del proyecto, busca los artefactos firmados y escribe
+latest.json con la firma y la URL de descarga.
+
+Opcional: NOTES="Arreglos y mejoras" para personalizar las notas.
+
+Si no defines GITHUB_REPO, intenta deducirlo del remoto `origin` de git.
+
+
+----------------------------------------
+5. PUBLICAR EN GITHUB
+----------------------------------------
+
+1. Repo -> Releases -> Draft a new release
+2. Tag: v0.1.7   (debe coincidir con la versión; prefijo "v")
+3. Título: Nebula Launcher v0.1.7
+4. Sube desde bundle/appimage/:
+      *.AppImage
+      *.AppImage.sig
+   Y desde la raíz del proyecto:
+      latest.json
+5. Si publicas para Windows (Tauri 2), sube también:
+      *-setup.exe  + *-setup.exe.sig
+      (el .exe es el artefacto que descarga el updater en Windows)
+      Si algún día usas el modo v1Compatible, serían *.nsis.zip + .sig.
+6. Publish release
+
+IMPORTANTE: sube el mismo archivo al que apunta latest.json. GitHub
+sustituye los espacios del nombre por puntos (Nebula.Launcher_...);
+create_latest_json.sh ya genera la URL con puntos para que coincida.
+Sube el .sig junto al binario: el updater lleva la firma dentro de
+latest.json, pero conservarla permite verificar la descarga a mano.
+
+
+----------------------------------------
+6. PROBAR
+----------------------------------------
+
+1. Instala/abre la versión anterior (por ejemplo 0.1.3).
+2. A los ~2,5 s aparece "Actualización disponible".
+3. Pulsa "Actualizar ahora": descarga, instala y reinicia sola.
+4. Comprueba en Configuración que la versión es la nueva.
+
+En Windows, el mismo feed sirve el instalador NSIS si latest.json incluye
+"windows-x86_64". Para compilarlo y publicarlo paso a paso, ver
+INSTRUCCIONES_WINDOWS.txt.
+
+También puedes forzar la comprobación desde
+Configuración > Actualizaciones > Buscar actualizaciones.
+
+
+----------------------------------------
+7. PROBLEMAS TÍPICOS
+----------------------------------------
+
+"failed to run cargo metadata"
+  Falta Rust. Instala: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  Luego: export PATH="$HOME/.cargo/bin:$PATH"
+
+"incorrect updater private key password"
+  El build está usando una clave con contraseña. Usa la nueva:
+  export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
+
+"no se encontraron artefactos firmados"
+  Compilaste sin la variable de entorno. Expórtala y recompila.
+
+La app no detecta la actualización
+  - La versión de latest.json debe ser MAYOR que la instalada.
+  - El tag del release debe ser v + versión.
+  - La URL debe apuntar al artefacto firmado exacto (.AppImage en Linux).
+  - GitHub tarda unos minutos en refrescar la caché tras publicar.
+  - Espera a que GitHub procese el release (unos segundos).
+
+
+----------------------------------------
+8. CHECKLIST RÁPIDO
+----------------------------------------
+
+    ./scripts/bump-version.sh
+    export PATH="$HOME/.cargo/bin:$PATH"
+    export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
+    npm run tauri build
+    GITHUB_REPO="DevAldx/nebula-launcher" ./create_latest_json.sh
+    # Subir artefactos + latest.json al release vX.Y.Z y publicar
