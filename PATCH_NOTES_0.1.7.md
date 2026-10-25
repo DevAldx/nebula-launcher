@@ -37,6 +37,15 @@ Mojang. Es la única vía aprobada oficialmente.
 El feed `latest.json` incluye Linux y Windows. La actualización se verifica con
 la firma minisign incluida en la app.
 
+## Verificación
+
+- 92 tests de `nebula-core` correctos (1 test live ignorado), `svelte-check` con
+  0 errores y 0 warnings, y `cargo check` de Tauri correcto.
+- Flujo heredado probado contra Microsoft con una cuenta real: código de
+  dispositivo, Xbox Live, XSTS, Minecraft, perfil y refresh token.
+- AppImage y NSIS generados y firmados. El instalador de Windows no se ejecutó
+  en un Windows real.
+
 ## Notas técnicas
 
 - Hosts de autenticación añadidos a la lista blanca: `login.live.com`.
