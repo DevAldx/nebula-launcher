@@ -14,6 +14,16 @@
   let importing = $state(false);
   let exportedPath = $state<string | null>(null);
   let exportError = $state("");
+  let folderError = $state("");
+
+  async function openFolder(inst: Instance) {
+    folderError = "";
+    try {
+      await api.openInstanceFolder(inst.id, "");
+    } catch (e) {
+      folderError = e instanceof Error ? e.message : String(e);
+    }
+  }
 
   async function exportInstance(inst: Instance) {
     exportError = "";
@@ -41,6 +51,36 @@
   </div>
 </div>
 
+<details class="card help">
+  <summary>¿Cómo funcionan las instancias y por qué en otro PC pone «se descargará al jugar»?</summary>
+  <div class="help-body">
+    <p>
+      Cada instancia es una carpeta independiente dentro de
+      <span class="mono">{app.info?.data_dir}/instances/</span> (por ejemplo,
+      <span class="mono">NBL-K7P2X9</span>). Dentro están <span class="mono">instance.json</span>
+      (nombre, versión, RAM, Java), <span class="mono">mods</span>,
+      <span class="mono">config</span>, <span class="mono">resourcepacks</span>,
+      <span class="mono">shaderpacks</span> y <span class="mono">saves</span>.
+    </p>
+    <p>
+      Minecraft, las librerías, los assets y Java son <strong>compartidos</strong> y viven fuera de
+      la instancia. Si copias solo su carpeta a otro PC, la instancia aparece como
+      «se descargará al jugar» porque faltan esos archivos comunes, no porque tengas que
+      configurar nada: pulsa <strong>JUGAR</strong> y Nebula los descarga para ese PC.
+    </p>
+    <p>
+      Para evitar la descarga, copia también las carpetas <span class="mono">versions</span>,
+      <span class="mono">libraries</span>, <span class="mono">assets</span> y
+      <span class="mono">java</span> del directorio de datos. El engranaje de cada tarjeta es
+      opcional: solo cambia RAM, Java y argumentos; la versión y el loader quedan fijados al crear
+      la instancia. Si la instancia guardó un Java manual de otro PC y esa ruta ya no existe,
+      elige <strong>Automático</strong> para que Nebula descargue el JRE que pida la versión. El
+      icono de carpeta abre la raíz de la instancia para copiarla.
+    </p>
+  </div>
+</details>
+{#if folderError}<p class="error">{folderError}</p>{/if}
+
 {#if app.list.broken.length > 0}
   <div class="card warn">
     <h2>Instancias con errores</h2>
@@ -67,7 +107,12 @@
             <span class="pill mono">{inst.id}</span>
             {#if selected}<span class="pill active">Seleccionada</span>{/if}
             <span class="spacer"></span>
-            <span class="pill">{inst.installed ? "Instalada" : "Sin descargar"}</span>
+            <span
+              class="pill"
+              title={inst.installed
+                ? "Minecraft y Java ya están descargados en este PC."
+                : "Los mods y ajustes ya están en la carpeta; Minecraft, librerías y Java se descargan al pulsar JUGAR."}
+            >{inst.installed ? "Instalada" : "Se descargará al jugar"}</span>
           </div>
           <div class="thumb-bottom">
             <div>
@@ -90,8 +135,9 @@
             </button>
             <div class="actions-group">
               <button class="btn icon" title="Mods" onclick={() => (modsFor = inst)}><Icon name="puzzle" size={17} /></button>
+              <button class="btn icon" title="Abrir carpeta de la instancia" onclick={() => openFolder(inst)}><Icon name="folder" size={17} /></button>
               <button class="btn icon" title="Exportar manifiesto" onclick={() => exportInstance(inst)}><Icon name="upload" size={17} /></button>
-              <button class="btn icon" title="Ajustes de la instancia" onclick={() => (modal = { instance: inst })}><Icon name="settings" size={17} /></button>
+              <button class="btn icon" title="Ajustes de la instancia (opcional)" onclick={() => (modal = { instance: inst })}><Icon name="settings" size={17} /></button>
             </div>
           </div>
         </div>
@@ -138,6 +184,33 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+  .help {
+    padding: 0;
+    overflow: hidden;
+  }
+  .help summary {
+    cursor: pointer;
+    padding: 16px 22px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .help[open] summary {
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .help-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 22px 20px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .help-body strong {
+    color: var(--text);
   }
   .empty-state {
     display: flex;

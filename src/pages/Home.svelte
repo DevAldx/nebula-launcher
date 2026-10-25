@@ -4,6 +4,7 @@
   import PlayButton from "../components/PlayButton.svelte";
   import LogView from "../components/LogView.svelte";
   import InstanceModal from "../components/InstanceModal.svelte";
+  import SkinFace from "../components/SkinFace.svelte";
   import Icon from "../components/Icon.svelte";
   import { lazyBackground } from "../lib/lazyBackground";
   import type { Instance } from "../lib/types";
@@ -50,7 +51,7 @@
   async function openFolder() {
     if (!inst) return;
     try {
-      await api.openInstanceFolder(inst.id, "mods"); // existe siempre; abre la carpeta de la instancia
+      await api.openInstanceFolder(inst.id, ""); // raíz de la instancia (instance.json, mods, saves…)
     } catch {
       // silencioso: el botón de abajo ya muestra errores de otras acciones
     }
@@ -59,11 +60,7 @@
 
 <section class="card account">
   {#if app.account}
-    {#if app.account.skin_url}
-      <img class="avatar" src={app.account.skin_url} alt="" />
-    {:else}
-      <span class="avatar avatar-fallback">{app.account.username.slice(0, 1).toUpperCase()}</span>
-    {/if}
+    <SkinFace url={app.account.skin_url} username={app.account.username} />
     <div class="who">
       <strong>{app.account.username}</strong>
       {#if app.account.kind === "offline"}
@@ -83,8 +80,8 @@
     <div class="who">
       <strong>Sin cuenta</strong>
       <span class="muted">
-        Inicia sesión local (sin Microsoft ni Azure) o conecta una cuenta de Microsoft si tienes
-        Client ID.
+        Inicia sesión local (sin Microsoft) o con tu cuenta de Microsoft. El botón de Microsoft
+        usa el flujo heredado, así que no necesitas Azure.
       </span>
     </div>
     <span class="spacer"></span>
@@ -93,11 +90,11 @@
     </button>
     <button
       class="btn"
-      title="Requiere un Client ID propio de Azure"
-      onclick={() => app.startSignIn()}
+      title="Flujo heredado de Microsoft, sin Azure (no oficial)"
+      onclick={() => app.startLegacySignIn()}
       disabled={app.signInBusy}
     >
-      Microsoft
+      {app.signInBusy && app.signInLegacy ? "Esperando a Microsoft…" : "Microsoft"}
     </button>
   {/if}
 </section>
@@ -109,7 +106,13 @@
     <div class="hero-overlay"></div>
     <div class="top">
       <div class="status-group">
-        <span class="badge" class:ready={inst.installed}>{inst.installed ? "Lista para jugar" : "Se descargará al jugar"}</span>
+        <span
+          class="badge"
+          class:ready={inst.installed}
+          title={inst.installed
+            ? "Minecraft y Java ya están descargados en este PC."
+            : "Los mods y ajustes de la instancia ya están aquí; Minecraft, librerías y Java se descargan en este PC al pulsar JUGAR."}
+        >{inst.installed ? "Lista para jugar" : "Se descargará al jugar"}</span>
         <span class="badge subtle">{inst.id}</span>
       </div>
       <span class="spacer"></span>
@@ -179,24 +182,10 @@
 <style>
   .account {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 14px;
     padding: 14px 20px;
-  }
-  .avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    image-rendering: pixelated;
-    border: 1px solid rgb(255 255 255 / 0.12);
-  }
-  .avatar-fallback {
-    display: grid;
-    place-items: center;
-    font-weight: 750;
-    color: var(--accent);
-    background: rgb(167 139 250 / 0.14);
-    border-color: var(--border-strong);
   }
   .who {
     display: flex;

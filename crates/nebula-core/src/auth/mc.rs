@@ -112,12 +112,23 @@ pub async fn fetch_profile(
         .skins
         .into_iter()
         .find(|s| s.state == "ACTIVE")
-        .map(|s| s.url);
+        .map(|s| normalize_skin_url(&s.url));
     Ok(Profile {
         uuid: dash_uuid(&parsed.id)?,
         username: parsed.name,
         skin_url,
     })
+}
+
+/// La API de Minecraft sigue devolviendo la skin por `http://textures.minecraft.net`.
+/// La CSP de Nebula solo permite HTTPS (y es lo correcto), pero el mismo recurso
+/// responde por HTTPS, así que normalizamos el esquema antes de guardarlo.
+pub fn normalize_skin_url(url: &str) -> String {
+    if let Some(rest) = url.strip_prefix("http://textures.minecraft.net/") {
+        format!("https://textures.minecraft.net/{rest}")
+    } else {
+        url.to_owned()
+    }
 }
 
 /// `api.minecraftservices.com` devuelve el UUID sin guiones; `--uuid` de Minecraft
@@ -186,6 +197,22 @@ mod tests {
     }
 
     #[test]
+    fn skin_urls_are_upgraded_to_https() {
+        assert_eq!(
+            normalize_skin_url("http://textures.minecraft.net/texture/abc"),
+            "https://textures.minecraft.net/texture/abc"
+        );
+        assert_eq!(
+            normalize_skin_url("https://textures.minecraft.net/texture/abc"),
+            "https://textures.minecraft.net/texture/abc"
+        );
+        assert_eq!(
+            normalize_skin_url("https://example.com/skin.png"),
+            "https://example.com/skin.png"
+        );
+    }
+
+    #[test]
     fn dash_uuid_formats_and_validates() {
         assert_eq!(
             dash_uuid("069a79f444e94726a5befca90e38aaf5").unwrap_or_default(),
@@ -228,8 +255,8 @@ mod tests {
     #[tokio::test]
     async fn fetch_profile_parses_active_skin_and_handles_404() -> Result<()> {
         let body = r#"{"id":"069a79f444e94726a5befca90e38aaf5","name":"Notch","skins":[
-            {"id":"a","state":"INACTIVE","url":"https://x/old.png"},
-            {"id":"b","state":"ACTIVE","url":"https://x/active.png"}
+            {"id":"a","state":"INACTIVE","url":"http://textures.minecraft.net/texture/old"},
+            {"id":"b","state":"ACTIVE","url":"http://textures.minecraft.net/texture/active"}
         ]}"#;
         let base = single_route("/profile", 200, body.into()).await;
         let ep = AuthEndpoints::for_tests(&base);
@@ -237,7 +264,10 @@ mod tests {
         let profile = fetch_profile(&client, &ep, "mctok").await?;
         assert_eq!(profile.username, "Notch");
         assert_eq!(profile.uuid, "069a79f4-44e9-4726-a5be-fca90e38aaf5");
-        assert_eq!(profile.skin_url.as_deref(), Some("https://x/active.png"));
+        assert_eq!(
+            profile.skin_url.as_deref(),
+            Some("https://textures.minecraft.net/texture/active")
+        );
 
         let missing = single_route("/profile", 404, String::new()).await;
         let ep = AuthEndpoints::for_tests(&missing);

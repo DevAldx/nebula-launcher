@@ -146,42 +146,38 @@
     </button>
     <br /><br />
   {:else}
-    <p>Sin cuenta. Puedes jugar en modo demo o iniciar sesión con una cuenta local.</p>
-    <br />
-    <button class="btn primary" onclick={() => app.openLocalSignIn()}>
-      <Icon name="user" size={16} /> Iniciar sesión local
-    </button>
-    <br /><br />
+    <p>Sin cuenta. Puedes jugar en modo demo, usar una cuenta local o entrar con Microsoft.</p>
+    <div class="account-actions">
+      <button class="btn primary" onclick={() => app.startLegacySignIn()} disabled={app.signInBusy}>
+        <Icon name="user" size={16} />
+        {app.signInBusy && app.signInLegacy ? "Esperando a Microsoft…" : "Iniciar sesión con Microsoft"}
+      </button>
+      <button class="btn" onclick={() => app.openLocalSignIn()}>
+        <Icon name="user" size={16} /> Cuenta local
+      </button>
+    </div>
+    <p class="hint">
+      El botón de Microsoft usa el flujo heredado de
+      <span class="mono">login.live.com</span>: no necesitas Azure, pero no es una integración
+      oficial y Microsoft podría bloquearlo sin aviso. La cuenta local solo sirve en servidores
+      con <span class="mono">online-mode=false</span>.
+    </p>
+    <details class="advanced">
+      <summary>Usar mi propia app de Azure (avanzado)</summary>
+      <label class="field">
+        <span>Client ID de Microsoft</span>
+        <input bind:value={clientId} placeholder="00000000-0000-0000-0000-000000000000" />
+      </label>
+      <p class="hint">
+        Es el GUID de tu aplicación registrada en portal.azure.com y aprobada para la API de
+        Minecraft. Es la vía oficial; si no la tienes, usa el botón de Microsoft de arriba o la
+        cuenta local. Pasos completos en el README.
+      </p>
+      <button class="btn" onclick={() => app.startSignIn()} disabled={app.signInBusy}>
+        Iniciar sesión con Azure
+      </button>
+    </details>
   {/if}
-  <details class="advanced">
-    <summary>Microsoft (avanzado, requiere Azure)</summary>
-    <label class="field">
-      <span>Client ID de Microsoft</span>
-      <input bind:value={clientId} placeholder="00000000-0000-0000-0000-000000000000" />
-    </label>
-    <p class="hint">
-      Es el GUID de tu propia aplicación registrada en portal.azure.com, aprobada para la API de
-      Minecraft. Sin esto, usa la cuenta local o el modo demo. Pasos completos en el README.
-    </p>
-    <button class="btn" onclick={() => app.startSignIn()} disabled={app.signInBusy}>
-      Iniciar sesión con Azure
-    </button>
-  </details>
-  <details class="advanced">
-    <summary>Microsoft heredado (no oficial, sin Azure)</summary>
-    <p class="hint">
-      Usa el identificador público del launcher oficial de Minecraft, así que no necesitas
-      registrar ninguna app. Tampoco es una integración oficial: Microsoft podría cambiarla o
-      bloquearla sin aviso. Si tienes tu propia app de Azure, usa la opción anterior.
-    </p>
-    <button
-      class="btn"
-      onclick={() => app.startLegacySignIn()}
-      disabled={app.signInBusy}
-    >
-      {app.signInBusy && app.signInLegacy ? "Esperando a Microsoft…" : "Iniciar sesión con Microsoft"}
-    </button>
-  </details>
   {#if app.signInError}<p class="error">{app.signInError}</p>{/if}
 </section>
 <br />
@@ -254,11 +250,15 @@
 {#if saved}<span class="hint">&nbsp; Guardado.</span>{/if}
 
 <style>
-  .update-actions {
+  .update-actions,
+  .account-actions {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+  }
+  .account-actions {
+    margin: 12px 0;
   }
   .advanced {
     margin-top: 18px;

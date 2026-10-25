@@ -66,7 +66,7 @@ export const api = {
     call<void>("delete_mod", { instanceId, fileName }),
   importMods: (instanceId: string, files: { name: string; data_base64: string }[]) =>
     call<string[]>("import_mods", { instanceId, files }),
-  openInstanceFolder: (instanceId: string, sub: "mods" | "config") =>
+  openInstanceFolder: (instanceId: string, sub: "" | "mods" | "config") =>
     call<void>("open_instance_folder", { instanceId, sub }),
   selectInstance: (id: string | null) => call<Settings>("select_instance", { id }),
   checkAndPrepareUpdate: () => call<NebulaUpdateStatus>("check_and_prepare_update"),

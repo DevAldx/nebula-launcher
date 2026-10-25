@@ -105,14 +105,42 @@ se descarga el fondo validando que sea PNG, JPG o WEBP. «Exportar» en una inst
 plantilla con los datos correctos y la lista de tus mods; te falta solo subir cada archivo a tu
 sitio y pegar su URL (y, si quieres verificación de integridad, su SHA-1) en el JSON.
 
+## Instancias: qué se guarda y cómo moverlas a otro PC
+
+Cada instancia es una carpeta independiente dentro del directorio de datos. La ruta exacta
+aparece en **Ajustes → General** y en el aviso de **Ajustes de la instancia**; por ejemplo, en
+Linux `~/.local/share/nebula/instances/NBL-XXXXXX/` y en Windows, bajo
+`%APPDATA%\dev.nebula.nebula\data\instances\NBL-XXXXXX\`.
+
+Dentro están `instance.json` (nombre, versión, loader, RAM y Java), `mods/`, `config/`,
+`resourcepacks/`, `shaderpacks/`, `saves/` y `logs/`. La versión y el loader quedan fijados al
+crear la instancia; el engranaje de la tarjeta es **opcional** y solo cambia nombre, RAM, Java y
+argumentos. Si la instancia guardó un Java manual de otro PC y esa ruta ya no existe, elige
+**Automático** en el engranaje: Nebula descargará el JRE que pida la versión.
+
+Minecraft, las librerías, los assets y Java **no** están dentro de la instancia: son compartidos
+y viven en `versions/`, `libraries/`, `assets/` y `java/` del directorio de datos.
+
+Por eso, al copiar solo la carpeta de la instancia a otro PC:
+
+1. Nebula la lista y conserva mods, configs y saves.
+2. La marca como «se descargará al jugar» porque en ese PC faltan los archivos compartidos.
+   **No falta configuración**: no hay que tocar el engranaje.
+3. Al pulsar **JUGAR** se descargan Minecraft, librerías, assets y el Java que pida la versión.
+
+Si quieres evitar esa descarga, copia también `versions/`, `libraries/`, `assets/` y `java/`.
+`settings.json` (en el directorio de configuración) guarda la instancia seleccionada; si no lo
+copias, Nebula selecciona automáticamente la instancia usada más recientemente. El icono de
+carpeta de cada tarjeta abre la raíz de la instancia para copiarla.
+
 ## Cómo ejecutar el AppImage ya construido
 
-Descarga `Nebula.Launcher_0.1.7_amd64.AppImage` desde la página de releases:
-<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.1.7>
+Descarga `Nebula.Launcher_0.1.8_amd64.AppImage` desde la página de releases:
+<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.1.8>
 
 ```
-chmod +x "Nebula.Launcher_0.1.7_amd64.AppImage"
-./"Nebula.Launcher_0.1.7_amd64.AppImage"
+chmod +x "Nebula.Launcher_0.1.8_amd64.AppImage"
+./"Nebula.Launcher_0.1.8_amd64.AppImage"
 ```
 
 El AppImage no necesita instalación. Si quieres una entrada en el menú de
@@ -166,7 +194,7 @@ y hay dos formas de compilar el instalador NSIS:
    `TAURI_SIGNING_PRIVATE_KEY` y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
 El instalador se genera en `src-tauri/target/release/bundle/nsis/`. La versión
-0.1.7 se compiló desde Linux con `cargo-xwin` y NSIS; el `.exe` y su `.sig`
+0.1.8 se compiló desde Linux con `cargo-xwin` y NSIS; el `.exe` y su `.sig`
 existen, pero **no se han probado en un Windows 10/11 real**. Windows 8/8.1 no
 es viable: Tauri 2 y el WebView2 actual ya no lo soportan. La guía está en
 `INSTRUCCIONES_WINDOWS.txt`.
@@ -192,10 +220,15 @@ Minecraft usa el inicio de sesión de Microsoft (Xbox Live + XSTS + Minecraft
 Services). Nebula ofrece dos formas de entrar; en ambas la contraseña se escribe
 en una página real de Microsoft y Nebula solo recibe tokens.
 
+El botón **Microsoft** de Inicio y de **Ajustes → Cuenta** usa directamente la
+vía heredada, sin Azure. La vía oficial con tu propia app queda en un apartado
+avanzado de Ajustes.
+
 ### Vía oficial: tu propia app de Azure
 
 Es la única aprobada por Mojang. Requiere registrar una aplicación y esperar su
-aprobación para la API de Minecraft.
+aprobación para la API de Minecraft. En Nebula está en
+**Ajustes → Cuenta → Usar mi propia app de Azure (avanzado)**.
 
 1. Entra en <https://portal.azure.com> → **Azure Active Directory** → **App registrations** → **New registration**.
 2. Nombre: lo que quieras (p. ej. "Nebula Launcher"). En **Supported account types** elige
@@ -212,8 +245,8 @@ aprobación para la API de Minecraft.
 ### Vía heredada: sin Azure (no oficial)
 
 Si no puedes registrar una app (por ejemplo, porque tu centro educativo bloquea
-el registro de aplicaciones), en **Configuración → Cuenta → Microsoft heredado**
-hay un botón que usa el flujo antiguo de `login.live.com` con el Client ID
+el registro de aplicaciones), el botón **Microsoft** de Inicio y de
+**Ajustes → Cuenta** usa el flujo antiguo de `login.live.com` con el Client ID
 público del launcher oficial de Minecraft (`00000000402b5328`).
 
 * No necesitas Azure ni tarjeta.

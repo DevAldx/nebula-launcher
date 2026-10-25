@@ -22,7 +22,7 @@ mod xbox;
 pub use device_flow::{DeviceCode, MsaTokens};
 pub use endpoints::{http_client, AuthEndpoints, AUTH_HOSTS};
 pub use legacy::LEGACY_CLIENT_ID;
-pub use mc::{McSession, Profile};
+pub use mc::{normalize_skin_url, McSession, Profile};
 pub use offline::account as offline_account;
 pub use session::{
     begin, begin_legacy, chain_from_legacy_msa, chain_from_msa, resume, wait_for_legacy_sign_in,

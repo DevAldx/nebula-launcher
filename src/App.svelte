@@ -31,7 +31,7 @@
 <div class="shell">
   <aside>
     <div class="brand" title="Nebula Launcher">
-      <span class="brand-mark">N</span>
+      <img class="brand-mark" src="/nebula-icon.png" alt="" />
       <span class="brand-text">Nebula</span>
     </div>
     <nav>
@@ -100,15 +100,11 @@
     text-align: center;
   }
   .brand-mark {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 12px;
-    display: grid;
-    place-items: center;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: #0d0c16;
-    background: radial-gradient(circle at top, #c4b5fd, var(--accent));
+    object-fit: cover;
+    border: 1px solid rgb(255 255 255 / 0.14);
     box-shadow: 0 30px 60px -40px var(--accent-glow);
   }
   .brand-text {

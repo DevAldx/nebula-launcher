@@ -1,15 +1,15 @@
 {
-  "version": "0.1.7",
-  "notes": "Nebula Launcher 0.1.7\n\n- Cuenta de Microsoft sin Azure (flujo heredado, opcional y no oficial): código de dispositivo en login.live.com, sesión guardada y renovación automática. Validado con una cuenta real.\n- Icono de Halloween en la app, la ventana y los instaladores.\n- Windows: instalador NSIS x64 (requiere Windows 10/11 y WebView2; Windows 8/8.1 no es compatible).\n- Linux: AppImage firmado con actualización automática.\n- La cuenta local y el modo demo siguen disponibles. La cuenta local solo funciona con online-mode=false.",
-  "pub_date": "2026-10-25T05:44:16Z",
+  "version": "0.1.8",
+  "notes": "Nebula Launcher 0.1.8\n\n- Inicio muestra la cara de la skin (8×8 + sombrero) y normaliza las texturas de Mojang a HTTPS.\n- El icono de Halloween se ve en la barra lateral y se usa como icono de la ventana.\n- El botón Microsoft abre el flujo heredado sin Azure; la app propia de Azure queda como opción avanzada.\n- Instancias en otro PC: textos claros sobre los archivos compartidos, selección automática de la instancia más reciente y apertura de la carpeta raíz.\n- Windows: instalador NSIS x64 (Windows 10/11; Windows 8/8.1 no es compatible). SmartScreen puede avisar porque no hay firma Authenticode.\n- Linux: AppImage firmado con actualización automática.\n- La cuenta local y el modo demo siguen disponibles; la cuenta local solo funciona con online-mode=false.",
+  "pub_date": "2026-10-25T15:17:05Z",
   "platforms": {
     "linux-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTVkyZEFzR2xWMkZCODZTbHNRTmwvWGNLeGVJTkZ3ZUp0VkRvSkEyS2JUVVBRL2JDQW1ac1FNVTlESUM3KytINytvb3V1YkZJLzdsV2QxZTBoUlMzeVE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTA3MDIwCWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMS43X2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4xLjcKR2xYcnJ1UXl0VWVsQVZzZFVUSUxUd1RkYXJGazFNdC9BeEdYektYT1FHV1N6bmg4NFh6ckRSNmJraXlXcU5heEV6MEJTd1gvVHNmRC9NdEt4UWlnQ2c9PQo=",
-      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.1.7/Nebula.Launcher_0.1.7_amd64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTVJyeC9XVkxTUFZBTVlUVmhxNXJFdmlFdzdrRGZLR092NDg2eEZkczRUUjY4dHNYNEdTODRZaERxdXh2RGhYNmZxUThIejNwQ3ZacXRoYzdQNUhNbUEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTQxMDE0CWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMS44X2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4xLjgKZlhBKy9lemN1KytNQlJ0Sk0ybnBBVHk2RXJ2WkdYQXZRWENoNlNyc2k0cnRiTkhJTGhjM2lOZWJST0ZKVm5wb0x2UG1Na05iNTZCQ3d5RWhYVHhKQ0E9PQo=",
+      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.1.8/Nebula.Launcher_0.1.8_amd64.AppImage"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTVMyRkRFcTRQQlE5Q01aVVNwdHNqRCtHc09Lbk8rUWpuWEFBUkF2cUxvdm1mUldoNjhJcktnN1JLYXZNTS9RNVA4dUNkOE9QbUE0SjY5UlFoKzF4YndFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTA2NzUyCWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMS43X3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjEuNwptNFZaWkgraHZXMlNROVlUeVA3U3FTOGtQZ0NCb1F6RlE4SStRcGxGMHdxNE8zZ3Y0SmNETkdxYzVTeko5c0NBZEEwSVNPY3NEKzQ2d0lZdWFTVW9BUT09Cg==",
-      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.1.7/Nebula.Launcher_0.1.7_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTVNzVFVHdVVHZVFoU1B5ekZmTlpZTisyQ3BiM2hMbmEyR05GQnZHQk9GNU00SHlxZndkenlKY0NIZCt3S0lKNHk0Rkh1NnJxdVpuOE5TM0h1YlFWaFFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTQxMzUxCWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMS44X3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjEuOApZNWVIOWZqNElzQ1R0TVdsbTJxcDJhbTg1SEhDcWh6TEZIY1lodUhEbGx2SW9HTzJvb0dCQ2U2alRyUXRDZGtZSldsSkdWaEV1Q1hMQVpBRTJxaVZCdz09Cg==",
+      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.1.8/Nebula.Launcher_0.1.8_x64-setup.exe"
     }
   }
 }

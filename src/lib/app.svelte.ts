@@ -80,6 +80,18 @@ class AppState {
       [this.settings, this.info, this.list, this.account] = await Promise.all([
         api.getSettings(), api.appInfo(), api.listInstances(), api.getAccount(),
       ]);
+      // Al copiar una instancia a otro PC, `settings.json` no viaja con ella y
+      // no hay ninguna seleccionada. Elegir la más reciente evita que Inicio
+      // parezca vacío o que haya que «configurar» algo antes de jugar.
+      const selected = this.list.instances.some(
+        (i) => i.id === this.settings?.selected_instance,
+      );
+      if (!selected && this.list.instances.length > 0) {
+        const newest = [...this.list.instances].sort(
+          (a, b) => (b.last_played ?? 0) - (a.last_played ?? 0),
+        )[0];
+        if (newest) await this.select(newest.id);
+      }
       const running = await api.gameStates();
       for (const [id, s] of Object.entries(running)) this.games[id] = s as GameState;
       this.ready = true;

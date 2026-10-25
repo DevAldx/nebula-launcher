@@ -77,6 +77,15 @@
 <div class="backdrop" onclick={onclose}>
   <div class="card modal" role="dialog" aria-modal="true" tabindex="-1" onclick={(e) => e.stopPropagation()}>
     <h1>{instance ? `Ajustes de ${instance.id}` : "Crear instancia"}</h1>
+    {#if instance}
+      <p class="hint path-hint">
+        Estos ajustes son opcionales: solo cambian RAM, Java y argumentos. La versión y el loader
+        son fijos. Si el Java manual guardado era de otro PC y ya no existe, elige
+        <strong>Automático</strong>. La instancia ya está en
+        <span class="mono">{app.info?.data_dir}/instances/{instance.id}</span>; el icono de carpeta
+        de su tarjeta abre esa ruta para copiarla a otro PC.
+      </p>
+    {/if}
     <br />
     <label class="field"><span>Nombre</span><input bind:value={name} maxlength="48" /></label>
     <div class="row">
@@ -150,4 +159,5 @@
   .modal { width: 480px; max-width: 92vw; background: rgb(var(--surface) / 1); }
   .actions { display: flex; gap: 10px; margin-top: 18px; }
   .spacer { flex: 1; }
+  .path-hint { overflow-wrap: anywhere; }
 </style>

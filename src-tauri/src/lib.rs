@@ -191,7 +191,9 @@ impl From<Account> for AccountView {
         Self {
             uuid: a.uuid,
             username: a.username,
-            skin_url: a.skin_url,
+            // Cuentas guardadas por 0.1.7 y anteriores pueden tener la URL http;
+            // se normaliza al mostrarla para que la CSP no bloquee la skin.
+            skin_url: a.skin_url.as_deref().map(auth::normalize_skin_url),
             kind: a.kind,
             flow: a.flow,
         }
@@ -581,7 +583,7 @@ fn open_instance_folder(
     instance_id: String,
     sub: String,
 ) -> CmdResult<()> {
-    if !matches!(sub.as_str(), "mods" | "config") {
+    if !matches!(sub.as_str(), "" | "mods" | "config") {
         return Err(CommandError::new("carpeta no permitida"));
     }
     let id = InstanceId::parse(&instance_id)?;
@@ -1096,6 +1098,13 @@ pub fn run() {
                 games: Mutex::new(HashMap::new()),
                 sign_in_cancel: Mutex::new(None),
             });
+            // `bundle.icon` empieza por `icons/icon.png` (512×512), así que este
+            // es el icono de Halloween que Tauri incrusta para la ventana.
+            if let Some(window) = app.get_webview_window("main") {
+                if let Some(icon) = app.default_window_icon().cloned() {
+                    let _ = window.set_icon(icon);
+                }
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
