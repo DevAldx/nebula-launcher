@@ -2,14 +2,14 @@
 NEBULA LAUNCHER — WINDOWS
 ========================================
 
-Última revisión: versión 0.1.9
+Última revisión: versión 0.1.10
 Carpeta del proyecto (Linux):
   /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
 Repo de releases:
   https://github.com/DevAldx/nebula-launcher
 
 IMPORTANTE
-  La versión 0.1.9 se compiló desde Linux con cargo-xwin + NSIS. El .exe y su
+  La versión 0.1.10 se compiló desde Linux con cargo-xwin + NSIS. El .exe y su
   .sig existen, pero NO se han probado en un Windows 10/11 real. Hasta que se
   pruebe, no se puede afirmar que el instalador funcione en todas las máquinas.
 
@@ -35,7 +35,7 @@ IMPORTANTE
 - Iconos .ico/.icns, icono de Halloween y configuración NSIS en
   src-tauri/tauri.windows.conf.json.
 - Script local scripts/build-windows.ps1 y CI .github/workflows/build-windows.yml.
-- Compilación cruzada desde Linux con cargo-xwin (la usada para 0.1.9).
+- Compilación cruzada desde Linux con cargo-xwin (la usada para 0.1.10).
 
 
 ----------------------------------------
@@ -68,8 +68,8 @@ O manualmente:
 
 Resultado:
   src-tauri\target\release\bundle\nsis\
-    Nebula Launcher_0.1.9_x64-setup.exe
-    Nebula Launcher_0.1.9_x64-setup.exe.sig
+    Nebula Launcher_0.1.10_x64-setup.exe
+    Nebula Launcher_0.1.10_x64-setup.exe.sig
 
 El .sig se genera solo porque bundle.createUpdaterArtifacts = true. Si no
 aparece, el build no vio TAURI_SIGNING_PRIVATE_KEY.
@@ -96,8 +96,8 @@ crea un wrapper en el PATH que exporte NSISDIR y ejecute el binario real.
 
 Resultado:
   src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/
-    Nebula Launcher_0.1.9_x64-setup.exe
-    Nebula Launcher_0.1.9_x64-setup.exe.sig
+    Nebula Launcher_0.1.10_x64-setup.exe
+    Nebula Launcher_0.1.10_x64-setup.exe.sig
 
 Los avisos sobre `libcmt.amd64.pdb` son normales con cargo-xwin y no impiden
 el enlazado.
@@ -139,7 +139,7 @@ Si algún día hace falta ARM64, hay que añadir otro job con
 El feed latest.json puede incluir Linux y Windows a la vez. El orden es:
 
   cd /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
-  ./scripts/bump-version.sh                 # ya hecho para 0.1.9
+  ./scripts/bump-version.sh                 # ya hecho para 0.1.10
   export PATH="$HOME/.cargo/bin:$PATH"
   export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
   npm run tauri build                       # AppImage Linux firmado
@@ -150,7 +150,7 @@ El feed latest.json puede incluir Linux y Windows a la vez. El orden es:
   # y después:
   GITHUB_REPO="DevAldx/nebula-launcher" ./create_latest_json.sh
 
-  # Crear el release v0.1.9 y subir:
+  # Crear el release v0.1.10 y subir:
   #   Linux:   *.AppImage, *.AppImage.sig
   #   Windows: *-setup.exe, *-setup.exe.sig
   #   latest.json
@@ -193,7 +193,7 @@ los espacios por puntos).
    - El juego debe arrancar con el classpath correcto (separador `;`).
 6. Importa una instancia compartida con background_url y comprueba que
    aparece el fondo y el nombre del manifiesto.
-7. Comprueba Ajustes > Actualizaciones y que la versión mostrada es 0.1.9.
+7. Comprueba Ajustes > Actualizaciones y que la versión mostrada es 0.1.10.
 8. Si algo falla, guarda el log de la instancia y el mensaje exacto antes de
    cambiar nada.
 

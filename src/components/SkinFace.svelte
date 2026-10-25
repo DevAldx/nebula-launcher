@@ -26,8 +26,19 @@
   });
 
   const initial = $derived(username.trim().slice(0, 1).toUpperCase() || "?");
+  // Posiciones en píxeles: la textura se escala 8× y se desplaza para dejar
+  // visible la región de 8×8 que corresponde a la cara y al sombrero.
   const faceStyle = $derived(
-    `width:${size}px;height:${size}px;--skin:url("${(url ?? "").replaceAll('"', "%22")}")`,
+    [
+      `width:${size}px`,
+      `height:${size}px`,
+      `--skin:url("${(url ?? "").replaceAll('"', "%22")}")`,
+      `--skin-size:${size * 8}px`,
+      `--face-x:${-size}px`,
+      `--face-y:${-size}px`,
+      `--hat-x:${-size * 5}px`,
+      `--hat-y:${-size}px`,
+    ].join(";"),
   );
 </script>
 
@@ -66,18 +77,17 @@
   }
   .skin-face:not(.fallback) {
     background-image: var(--skin);
-    background-size: 800% 800%;
+    background-size: var(--skin-size) var(--skin-size);
     background-repeat: no-repeat;
-    /* (8/56) y (40/56) con background-size al 800 %. */
-    background-position: -14.2857% -14.2857%;
+    background-position: var(--face-x) var(--face-y);
   }
   .hat {
     position: absolute;
     inset: 0;
     background-image: var(--skin);
-    background-size: 800% 800%;
+    background-size: var(--skin-size) var(--skin-size);
     background-repeat: no-repeat;
-    background-position: -71.4286% -14.2857%;
+    background-position: var(--hat-x) var(--hat-y);
     image-rendering: pixelated;
   }
   .fallback {

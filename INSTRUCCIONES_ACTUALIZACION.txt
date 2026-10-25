@@ -2,7 +2,7 @@
 NEBULA LAUNCHER — COMPILAR Y PUBLICAR ACTUALIZACIONES
 ========================================
 
-Última revisión: versión 0.1.9
+Última revisión: versión 0.1.10
 Carpeta del proyecto: /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
 Repo de releases: https://github.com/DevAldx/nebula-launcher
 
@@ -51,7 +51,7 @@ Cada cambio que publiques debe llevar una versión nueva:
     cd /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
     ./scripts/bump-version.sh
 
-    # 0.1.9 -> 0.1.10
+    # 0.1.10 -> 0.1.11
     # También: ./scripts/bump-version.sh minor   (0.2.0)
     #           ./scripts/bump-version.sh major   (1.0.0)
 
@@ -70,8 +70,8 @@ src-tauri/Cargo.toml y la versión del workspace (nebula-core).
 
 Resultado en src-tauri/target/release/bundle/appimage/:
 
-    Nebula Launcher_0.1.9_amd64.AppImage
-    Nebula Launcher_0.1.9_amd64.AppImage.sig
+    Nebula Launcher_0.1.10_amd64.AppImage
+    Nebula Launcher_0.1.10_amd64.AppImage.sig
 
 El .sig se genera solo porque bundle.createUpdaterArtifacts = true.
 Si no aparece el .sig, es que el build no vio TAURI_SIGNING_PRIVATE_KEY.
@@ -88,7 +88,7 @@ src-tauri/tauri.windows.conf.json.
 
 También se puede compilar Windows desde Linux con cargo-xwin y NSIS 3.11;
 el comando exacto está en INSTRUCCIONES_WINDOWS.txt, sección 2b. El
-instalador 0.1.9 se generó así, pero aún no se probó en un Windows real.
+instalador 0.1.10 se generó así, pero aún no se probó en un Windows real.
 
 
 ----------------------------------------
@@ -111,8 +111,8 @@ Si no defines GITHUB_REPO, intenta deducirlo del remoto `origin` de git.
 ----------------------------------------
 
 1. Repo -> Releases -> Draft a new release
-2. Tag: v0.1.9   (debe coincidir con la versión; prefijo "v")
-3. Título: Nebula Launcher v0.1.9
+2. Tag: v0.1.10   (debe coincidir con la versión; prefijo "v")
+3. Título: Nebula Launcher v0.1.10
 4. Sube desde bundle/appimage/:
       *.AppImage
       *.AppImage.sig
