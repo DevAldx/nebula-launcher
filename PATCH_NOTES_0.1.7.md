@@ -11,6 +11,8 @@ Fecha: 2026-10-24
   registrar una app, tarjeta ni tenant de Azure.
   - Funciona con código de dispositivo y navegador, igual que el flujo oficial.
   - La sesión se guarda en el almacén seguro del sistema y se renueva sola.
+  - Validado con una cuenta real: código de dispositivo, Xbox Live, XSTS,
+    Minecraft, perfil y renovación con el refresh token.
   - **No es una integración oficial de Mojang.** Microsoft podría cambiarla o
     bloquearla sin aviso. Para uso personal y grupos pequeños; si falla, usa la
     vía oficial con tu propia app de Azure o la cuenta local.

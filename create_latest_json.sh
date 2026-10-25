@@ -19,7 +19,9 @@ cd "$BASE_DIR"
 
 VERSION=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' src-tauri/tauri.conf.json | head -1)
 PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-BUNDLE="$BASE_DIR/src-tauri/target/release/bundle"
+# Linux deja los artefactos en target/release/bundle y Windows en
+# target/<triple>/release/bundle; se buscan ambos y solo la versión actual.
+BUNDLE="$BASE_DIR/src-tauri/target"
 NOTES="${NOTES:-Actualización de Nebula Launcher}"
 TAG_PREFIX="${TAG_PREFIX:-v}"
 
@@ -39,7 +41,7 @@ BASE_URL="https://github.com/$GITHUB_REPO/releases/download/${TAG_PREFIX}${VERSI
 artifact() {
   local pattern="$1"
   local file
-  file=$(find "$BUNDLE" -name "$pattern" -type f 2>/dev/null | head -1)
+  file=$(find "$BUNDLE" -path "*/bundle/*" -name "$pattern" -name "*${VERSION}*" -type f 2>/dev/null | head -1)
   if [ -z "$file" ]; then
     return 1
   fi
