@@ -20,7 +20,18 @@ md-5 = "0.10"
 flate2 = "1"
 tar = "0.4"
 zip = { version = "2", default-features = false, features = ["deflate"] }
-keyring = "3"
+
+# `keyring` sin features usa el almacén `mock` en memoria: el refresh token se
+# perdía al cerrar la app y la cuenta guardada quedaba como una sesión fantasma.
+# Cada plataforma necesita su backend nativo para que el token persista.
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", features = ["apple-native"] }
 
 [lints]
 workspace = true

@@ -109,7 +109,12 @@ class AppState {
     if (ev.state === "stopped" || ev.state === "error") {
       delete this.games[ev.id];
       delete this.progress[ev.id];
-      if (ev.state === "error" && ev.message) this.errors[ev.id] = ev.message;
+      if (ev.state === "error" && ev.message) {
+        this.errors[ev.id] = ev.message;
+        // Si la sesión de Microsoft caducó, Rust borra el perfil cacheado;
+        // refrescarlo evita seguir mostrando «conectado».
+        void this.refreshAccount();
+      }
       if (ev.state === "stopped" && ev.exit_code) {
         this.errors[ev.id] = `El juego terminó con código ${ev.exit_code}. Revisa los logs.`;
       }
@@ -183,6 +188,15 @@ class AppState {
     }
   }
 
+  /** Relee la cuenta guardada; si Rust la descartó, deja de mostrarla. */
+  async refreshAccount() {
+    try {
+      this.account = await api.getAccount();
+    } catch (e) {
+      console.error("no se pudo refrescar la cuenta", e);
+    }
+  }
+
   async saveSettings(next: Settings) {
     this.settings = await api.saveSettings(next);
   }
@@ -201,6 +215,7 @@ class AppState {
       await api.play(id);
     } catch (e) {
       this.errors[id] = e instanceof Error ? e.message : String(e);
+      void this.refreshAccount();
     }
   }
 

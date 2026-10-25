@@ -234,7 +234,28 @@ fn emit_auth_state(
 /// `play_instance` siempre renueva la sesión real antes de lanzar).
 #[tauri::command]
 fn get_account(state: State<'_, AppState>) -> CmdResult<Option<AccountView>> {
-    Ok(state.auth_store.cached_account().map(Into::into))
+    let Some(account) = state.auth_store.cached_account() else {
+        return Ok(None);
+    };
+    // El perfil se cachea en disco, pero el refresh token vive en el almacén
+    // seguro. Si falta (por ejemplo, una cuenta guardada por 0.1.8 o antes,
+    // cuando `keyring` usaba el backend `mock`), no mostrarla como conectada.
+    if account.kind == AccountKind::Microsoft {
+        match state.auth_store.refresh_token() {
+            Ok(Some(_)) => {}
+            Ok(None) => {
+                let _ = state.auth_store.clear();
+                return Ok(None);
+            }
+            Err(e) => {
+                // Un almacén bloqueado no debe impedir arrancar; se mostrará
+                // como sin cuenta y el error real aparecerá al iniciar sesión.
+                eprintln!("no se pudo leer la sesión guardada: {e}");
+                return Ok(None);
+            }
+        }
+    }
+    Ok(Some(account.into()))
 }
 
 /// Espera al usuario, completa Xbox Live → XSTS → Minecraft y guarda la cuenta
@@ -835,7 +856,16 @@ async fn prepare_and_run(app: &AppHandle, id: &InstanceId) -> Result<Option<i32>
                 Some(signed_in) => {
                     LaunchAuth::from_session(&signed_in.account, &signed_in.session)
                 }
-                None => LaunchAuth::demo(),
+                None => {
+                    // Hay un perfil de Microsoft cacheado pero no un refresh
+                    // token: lanzar en modo demo haría creer que la cuenta se
+                    // perdió sin explicación. Mejor pedir que se inicie sesión.
+                    return Err(CoreError::Auth(
+                        "tu sesión de Microsoft no está disponible en este PC; \
+                         inicia sesión de nuevo."
+                            .into(),
+                    ));
+                }
             }
         }
         None => LaunchAuth::demo(),

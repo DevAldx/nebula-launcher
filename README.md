@@ -135,12 +135,12 @@ carpeta de cada tarjeta abre la raíz de la instancia para copiarla.
 
 ## Cómo ejecutar el AppImage ya construido
 
-Descarga `Nebula.Launcher_0.1.8_amd64.AppImage` desde la página de releases:
-<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.1.8>
+Descarga `Nebula.Launcher_0.1.9_amd64.AppImage` desde la página de releases:
+<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.1.9>
 
 ```
-chmod +x "Nebula.Launcher_0.1.8_amd64.AppImage"
-./"Nebula.Launcher_0.1.8_amd64.AppImage"
+chmod +x "Nebula.Launcher_0.1.9_amd64.AppImage"
+./"Nebula.Launcher_0.1.9_amd64.AppImage"
 ```
 
 El AppImage no necesita instalación. Si quieres una entrada en el menú de
@@ -194,7 +194,7 @@ y hay dos formas de compilar el instalador NSIS:
    `TAURI_SIGNING_PRIVATE_KEY` y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
 El instalador se genera en `src-tauri/target/release/bundle/nsis/`. La versión
-0.1.8 se compiló desde Linux con `cargo-xwin` y NSIS; el `.exe` y su `.sig`
+0.1.9 se compiló desde Linux con `cargo-xwin` y NSIS; el `.exe` y su `.sig`
 existen, pero **no se han probado en un Windows 10/11 real**. Windows 8/8.1 no
 es viable: Tauri 2 y el WebView2 actual ya no lo soportan. La guía está en
 `INSTRUCCIONES_WINDOWS.txt`.
