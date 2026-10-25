@@ -105,24 +105,19 @@ se descarga el fondo validando que sea PNG, JPG o WEBP. «Exportar» en una inst
 plantilla con los datos correctos y la lista de tus mods; te falta solo subir cada archivo a tu
 sitio y pegar su URL (y, si quieres verificación de integridad, su SHA-1) en el JSON.
 
-## Cómo instalar el AppImage ya construido
+## Cómo ejecutar el AppImage ya construido
 
-Si ya tienes `Nebula-Launcher-0.1.7-x86_64.AppImage` y `Nebula-Installer-0.1.7-x86_64.AppImage`
-(vienen juntos en este mismo paquete, dentro de `release/`):
+Descarga `Nebula.Launcher_0.1.7_amd64.AppImage` desde la página de releases:
+<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.1.7>
 
 ```
-chmod +x Nebula-Installer-0.1.7-x86_64.AppImage
-./Nebula-Installer-0.1.7-x86_64.AppImage
+chmod +x "Nebula.Launcher_0.1.7_amd64.AppImage"
+./"Nebula.Launcher_0.1.7_amd64.AppImage"
 ```
 
-El instalador encuentra automáticamente el AppImage del launcher porque está en la misma
-carpeta, lo copia a `~/.local/share/nebula-launcher/Nebula-Launcher.AppImage`, lo marca
-ejecutable y crea `~/.local/share/applications/nebula-launcher.desktop` — a partir de ahí,
-Nebula aparece en el menú de aplicaciones de KDE/GNOME como cualquier otra app instalada.
-
-También puedes saltarte el instalador y ejecutar el AppImage del launcher directamente:
-`chmod +x Nebula-Launcher-0.1.7-x86_64.AppImage && ./Nebula-Launcher-0.1.7-x86_64.AppImage`
-— simplemente no tendrás el acceso en el menú de aplicaciones.
+El AppImage no necesita instalación. Si quieres una entrada en el menú de
+aplicaciones, compila el instalador de `installer/` (ver abajo); ese instalador
+opcional no se publica como asset en esta release.
 
 ## Compilar el AppImage tú mismo
 
