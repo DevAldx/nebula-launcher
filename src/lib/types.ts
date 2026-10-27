@@ -130,9 +130,11 @@ export interface Account {
 export interface SignInCodeEvent {
   user_code: string;
   verification_uri: string;
+  legacy: boolean;
+  window_opened: boolean;
 }
 
-export type AuthState = "connecting" | "success" | "error";
+export type AuthState = "connecting" | "success" | "cancelled" | "error";
 
 export interface AuthStateEvent {
   state: AuthState;

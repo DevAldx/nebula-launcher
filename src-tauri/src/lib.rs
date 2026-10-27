@@ -42,6 +42,7 @@ struct AppState {
     auth_store: AccountStore,
     auth_http: reqwest::Client,
     sign_in_cancel: Mutex<Option<oneshot::Sender<()>>>,
+    sign_in_code: Mutex<Option<SignInCodeState>>,
 }
 
 impl AppState {
@@ -61,6 +62,14 @@ impl AppState {
         &self,
     ) -> Result<MutexGuard<'_, Option<oneshot::Sender<()>>>, CommandError> {
         self.sign_in_cancel
+            .lock()
+            .map_err(|_| CommandError::new("estado interno corrupto, reinicia Nebula"))
+    }
+
+    fn pending_sign_in(
+        &self,
+    ) -> Result<MutexGuard<'_, Option<SignInCodeState>>, CommandError> {
+        self.sign_in_code
             .lock()
             .map_err(|_| CommandError::new("estado interno corrupto, reinicia Nebula"))
     }
@@ -204,6 +213,18 @@ impl From<Account> for AccountView {
 struct SignInCodeEvent {
     user_code: String,
     verification_uri: String,
+    /// `true` si el código usa el flujo heredado de login.live.com.
+    legacy: bool,
+    /// `true` si el código se muestra en una ventana aparte (no en un modal).
+    window_opened: bool,
+}
+
+/// Código pendiente que consulta la ventana de inicio de sesión al cargar.
+#[derive(Clone)]
+struct SignInCodeState {
+    user_code: String,
+    verification_uri: String,
+    legacy: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -228,6 +249,87 @@ fn emit_auth_state(
             account,
         },
     );
+}
+
+/// Abre (o reutiliza) la ventana dedicada del inicio de sesión. No es un modal:
+/// así el código no se mezcla con la interfaz principal.
+fn open_sign_in_window(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
+    if let Some(window) = app.get_webview_window("signin") {
+        let _ = window.show();
+        let _ = window.set_focus();
+        return Ok(window);
+    }
+
+    let window = tauri::WebviewWindowBuilder::new(
+        app,
+        "signin",
+        tauri::WebviewUrl::App("index.html".into()),
+    )
+    .title("Nebula — Iniciar sesión")
+    .inner_size(460.0, 500.0)
+    .resizable(false)
+    .maximizable(false)
+    .minimizable(false)
+    .center()
+    .build()?;
+
+    if let Some(icon) = app.default_window_icon().cloned() {
+        let _ = window.set_icon(icon);
+    }
+    Ok(window)
+}
+
+fn close_sign_in_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("signin") {
+        let _ = window.close();
+    }
+}
+
+fn emit_sign_in_code(app: &AppHandle, event: &SignInCodeEvent) {
+    let _ = app.emit_to("signin", "sign-in-code", event.clone());
+}
+
+/// Guarda el código para que la ventana lo pueda pedir en cuanto cargue.
+fn store_sign_in_code(
+    state: &AppState,
+    code: &auth::DeviceCode,
+    legacy: bool,
+) -> CmdResult<SignInCodeEvent> {
+    let event = SignInCodeEvent {
+        user_code: code.user_code.clone(),
+        verification_uri: code.verification_uri.clone(),
+        legacy,
+        window_opened: false,
+    };
+    *state.pending_sign_in()? = Some(SignInCodeState {
+        user_code: event.user_code.clone(),
+        verification_uri: event.verification_uri.clone(),
+        legacy,
+    });
+    Ok(event)
+}
+
+/// Intenta mostrar el código en la ventana dedicada. Si no se puede crear,
+/// devuelve el evento con `window_opened=false` y la UI principal usa el modal
+/// de respaldo.
+fn show_sign_in_window(
+    app: &AppHandle,
+    state: &AppState,
+    mut event: SignInCodeEvent,
+) -> SignInCodeEvent {
+    match open_sign_in_window(app) {
+        Ok(_) => {
+            event.window_opened = true;
+            emit_sign_in_code(app, &event);
+        }
+        Err(e) => {
+            eprintln!("no se pudo abrir la ventana de inicio de sesión: {e}");
+            if let Ok(mut pending) = state.pending_sign_in() {
+                *pending = None;
+            }
+        }
+    }
+    event
 }
 
 /// Última cuenta conocida, sin tocar la red (puede estar desactualizada;
@@ -296,12 +398,26 @@ fn spawn_sign_in(
 ) {
     tauri::async_runtime::spawn(async move {
         let result = finish_sign_in(&app, &http, &ep, &client_id, &code, cancel, flow).await;
-        if let Ok(mut slot) = app.state::<AppState>().sign_in_cancel() {
-            *slot = None;
+        {
+            let state = app.state::<AppState>();
+            let _ = state.sign_in_cancel().map(|mut slot| *slot = None);
+            let _ = state.pending_sign_in().map(|mut pending| *pending = None);
         }
         match result {
-            Ok(account) => emit_auth_state(&app, "success", None, Some(account.into())),
-            Err(e) => emit_auth_state(&app, "error", Some(e.to_string()), None),
+            Ok(account) => {
+                emit_auth_state(&app, "success", None, Some(account.into()));
+                close_sign_in_window(&app);
+            }
+            Err(e) => {
+                let message = e.to_string();
+                if message.contains("cancelado") {
+                    emit_auth_state(&app, "cancelled", None, None);
+                    close_sign_in_window(&app);
+                } else {
+                    // La ventana dedicada se queda abierta para mostrar el error.
+                    emit_auth_state(&app, "error", Some(message), None);
+                }
+            }
         }
     });
 }
@@ -317,16 +433,13 @@ async fn begin_sign_in(app: AppHandle, state: State<'_, AppState>) -> CmdResult<
     let client_id = state.microsoft_client_id()?;
     let ep = AuthEndpoints::live();
     let code = auth::begin(&state.auth_http, &ep, &client_id).await?;
-    let event = SignInCodeEvent {
-        user_code: code.user_code.clone(),
-        verification_uri: code.verification_uri.clone(),
-    };
+    let event = store_sign_in_code(state.inner(), &code, false)?;
 
     let (tx, rx) = oneshot::channel();
     *state.sign_in_cancel()? = Some(tx);
     emit_auth_state(&app, "connecting", None, None);
     spawn_sign_in(
-        app,
+        app.clone(),
         state.auth_http.clone(),
         ep,
         client_id,
@@ -334,7 +447,7 @@ async fn begin_sign_in(app: AppHandle, state: State<'_, AppState>) -> CmdResult<
         rx,
         AuthFlow::Azure,
     );
-    Ok(event)
+    Ok(show_sign_in_window(&app, state.inner(), event))
 }
 
 /// Inicio de sesión heredado de `login.live.com`: no requiere Client ID de Azure,
@@ -349,16 +462,13 @@ async fn begin_legacy_sign_in(
     }
     let ep = AuthEndpoints::live();
     let code = auth::begin_legacy(&state.auth_http, &ep).await?;
-    let event = SignInCodeEvent {
-        user_code: code.user_code.clone(),
-        verification_uri: code.verification_uri.clone(),
-    };
+    let event = store_sign_in_code(state.inner(), &code, true)?;
 
     let (tx, rx) = oneshot::channel();
     *state.sign_in_cancel()? = Some(tx);
     emit_auth_state(&app, "connecting", None, None);
     spawn_sign_in(
-        app,
+        app.clone(),
         state.auth_http.clone(),
         ep,
         String::new(),
@@ -366,14 +476,31 @@ async fn begin_legacy_sign_in(
         rx,
         AuthFlow::Legacy,
     );
-    Ok(event)
+    Ok(show_sign_in_window(&app, state.inner(), event))
+}
+
+/// Código pendiente para la ventana dedicada. La ventana lo pide al cargar para
+/// no depender de que el evento llegue antes que el frontend.
+#[tauri::command]
+fn get_sign_in_code(state: State<'_, AppState>) -> CmdResult<Option<SignInCodeEvent>> {
+    let pending = state.pending_sign_in()?;
+    Ok(pending.as_ref().map(|code| SignInCodeEvent {
+        user_code: code.user_code.clone(),
+        verification_uri: code.verification_uri.clone(),
+        legacy: code.legacy,
+        window_opened: true,
+    }))
 }
 
 #[tauri::command]
-fn cancel_sign_in(state: State<'_, AppState>) -> CmdResult<()> {
+fn cancel_sign_in(app: AppHandle, state: State<'_, AppState>) -> CmdResult<()> {
     if let Some(tx) = state.sign_in_cancel()?.take() {
         let _ = tx.send(());
     }
+    if let Ok(mut pending) = state.pending_sign_in() {
+        *pending = None;
+    }
+    close_sign_in_window(&app);
     Ok(())
 }
 
@@ -1110,6 +1237,25 @@ async fn install_update(app: AppHandle) -> CmdResult<()> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .on_window_event(|window, event| {
+            // Si el usuario cierra la ventana de inicio de sesión, se cancela
+            // el flujo para que la ventana principal no se quede esperando.
+            if window.label() == "signin" {
+                if let tauri::WindowEvent::Destroyed = event {
+                    let app = window.app_handle();
+                    if let Some(state) = app.try_state::<AppState>() {
+                        if let Ok(mut slot) = state.sign_in_cancel() {
+                            if let Some(tx) = slot.take() {
+                                let _ = tx.send(());
+                            }
+                        }
+                        if let Ok(mut pending) = state.pending_sign_in() {
+                            *pending = None;
+                        }
+                    }
+                }
+            }
+        })
         .setup(|app| {
             let boot = NebulaPaths::from_system()?;
             let settings = Settings::load(&boot.settings_file())?;
@@ -1127,6 +1273,7 @@ pub fn run() {
                 settings: Mutex::new(settings),
                 games: Mutex::new(HashMap::new()),
                 sign_in_cancel: Mutex::new(None),
+                sign_in_code: Mutex::new(None),
             });
             // `bundle.icon` empieza por `icons/icon.png` (512×512), así que este
             // es el icono de Halloween que Tauri incrusta para la ventana.
@@ -1142,6 +1289,7 @@ pub fn run() {
             get_settings,
             save_settings,
             get_account,
+            get_sign_in_code,
             begin_sign_in,
             begin_legacy_sign_in,
             sign_in_offline,

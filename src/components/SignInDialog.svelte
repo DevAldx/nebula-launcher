@@ -57,7 +57,14 @@
 {/if}
 
 <style>
-  .backdrop { position: fixed; inset: 0; background: rgb(0 0 0 / 0.55); display: grid; place-items: center; }
+  .backdrop {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgb(0 0 0 / 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: grid; place-items: center;
+    padding: 20px; overflow: auto;
+  }
   .modal { width: 420px; max-width: 92vw; background: rgb(var(--surface) / 1); text-align: center; }
   .code {
     font-size: 30px; letter-spacing: 0.12em; font-weight: 650; color: var(--accent);

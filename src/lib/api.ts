@@ -39,6 +39,7 @@ export const api = {
     call<Instance>("update_instance", { id, patch }),
   deleteInstance: (id: string) => call<Settings>("delete_instance", { id }),
   getAccount: () => call<Account | null>("get_account"),
+  getSignInCode: () => call<SignInCodeEvent | null>("get_sign_in_code"),
   beginSignIn: () => call<SignInCodeEvent>("begin_sign_in"),
   beginLegacySignIn: () => call<SignInCodeEvent>("begin_legacy_sign_in"),
   signInOffline: (username: string) => call<Account>("sign_in_offline", { username }),

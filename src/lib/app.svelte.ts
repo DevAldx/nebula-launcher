@@ -131,9 +131,17 @@ class AppState {
   }
 
   private onAuthState(ev: AuthStateEvent) {
+    if (ev.state === "connecting") {
+      this.signInBusy = true;
+      return;
+    }
     this.signInBusy = false;
     if (ev.state === "success") {
       this.account = ev.account;
+      this.signIn = null;
+      this.signInError = null;
+      this.signInLegacy = false;
+    } else if (ev.state === "cancelled") {
       this.signIn = null;
       this.signInError = null;
       this.signInLegacy = false;
@@ -233,7 +241,10 @@ class AppState {
     this.signInBusy = true;
     try {
       const code = await api.beginSignIn();
-      this.signIn = { userCode: code.user_code, verificationUri: code.verification_uri };
+      // Si Rust abrió la ventana dedicada, no mostramos el modal sobre la UI.
+      this.signIn = code.window_opened
+        ? null
+        : { userCode: code.user_code, verificationUri: code.verification_uri };
     } catch (e) {
       this.signInError = e instanceof Error ? e.message : String(e);
       this.signInBusy = false;
@@ -247,7 +258,9 @@ class AppState {
     this.signInBusy = true;
     try {
       const code = await api.beginLegacySignIn();
-      this.signIn = { userCode: code.user_code, verificationUri: code.verification_uri };
+      this.signIn = code.window_opened
+        ? null
+        : { userCode: code.user_code, verificationUri: code.verification_uri };
     } catch (e) {
       this.signInError = e instanceof Error ? e.message : String(e);
       this.signInBusy = false;
@@ -256,6 +269,9 @@ class AppState {
   }
 
   openLocalSignIn() {
+    // Una cuenta local y un inicio de sesión de Microsoft no deben competir:
+    // si hay uno de Microsoft en curso, se cancela al abrir este diálogo.
+    if (this.signInBusy) void this.cancelSignIn();
     this.localSignInError = null;
     this.localSignInOpen = true;
   }
@@ -283,6 +299,7 @@ class AppState {
     this.signIn = null;
     this.signInBusy = false;
     this.signInLegacy = false;
+    this.signInError = null;
     try {
       await api.cancelSignIn();
     } catch {
