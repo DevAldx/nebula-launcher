@@ -199,6 +199,12 @@ existen, pero **no se han probado en un Windows 10/11 real**. Windows 8/8.1 no
 es viable: Tauri 2 y el WebView2 actual ya no lo soportan. La guía está en
 `INSTRUCCIONES_WINDOWS.txt`.
 
+**Wine/Bottles no es compatible.** El instalador NSIS intenta descargar e
+instalar WebView2 y falla (código 2) porque Wine no lo soporta; aunque se
+forzara la instalación, la app Tauri no podría renderizar sin WebView2. En
+Linux hay que usar el AppImage nativo. Para la versión de Windows hace falta un
+Windows 10/11 real o una máquina virtual.
+
 ## Cuenta local: jugar sin Microsoft ni Azure
 
 La opción más sencilla es una **cuenta local**:

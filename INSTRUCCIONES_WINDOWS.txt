@@ -16,6 +16,12 @@ IMPORTANTE
   Windows 8/8.1 no es compatible: Tauri 2 y el WebView2 actual requieren
   Windows 10/11.
 
+  Wine y Bottles tampoco son compatibles. El instalador NSIS intenta
+  descargar e instalar WebView2 y termina con código 2 porque Wine no lo
+  soporta; aunque se forzara la instalación, la app Tauri no podría
+  renderizar sin WebView2. En Linux hay que usar el AppImage nativo. Para
+  probar la versión de Windows hace falta un Windows 10/11 real o una VM.
+
   La clave privada de firma NUNCA se sube al repositorio ni se comparte.
   Para CI se usan los secretos del repositorio.
 
