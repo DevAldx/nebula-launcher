@@ -292,6 +292,14 @@ $windowSeen = $false
 if ($exe) {
     $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"
     try {
+        $wvPolicy = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2'
+        New-Item -Path $wvPolicy -Force | Out-Null
+        Set-ItemProperty -Path $wvPolicy -Name 'AdditionalBrowserArguments' -Value '--remote-debugging-port=9222' -Type String
+        Write-Report "Política WebView2 AdditionalBrowserArguments aplicada."
+    } catch {
+        Write-Report "No se pudo aplicar la política WebView2: $($_.Exception.Message)"
+    }
+    try {
         $app = Start-Process -FilePath $exe.FullName -WorkingDirectory $installDir -PassThru
         Write-Report "Lanzado PID $($app.Id)"
         $deadline = (Get-Date).AddSeconds(60)
