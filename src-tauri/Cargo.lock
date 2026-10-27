@@ -2337,7 +2337,7 @@ dependencies = [
 
 [[package]]
 name = "nebula-core"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "directories",
  "flate2",
@@ -2358,7 +2358,7 @@ dependencies = [
 
 [[package]]
 name = "nebula-launcher"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "base64 0.22.1",
  "nebula-core",

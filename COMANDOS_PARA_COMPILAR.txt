@@ -7,7 +7,7 @@ Instalar Rust (solo la primera vez, si falta):
     export PATH="$HOME/.cargo/bin:$PATH"
 
 Compilar la versión actual:
-    cd /home/dns10011/Escritorio/nebula-launcher-fase7-eufonia
+    cd "/home/dns10011/Escritorio/laucher etc/nebula-launcher-fase7-eufonia"
     export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
     npm run tauri build
 
