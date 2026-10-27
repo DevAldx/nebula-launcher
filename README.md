@@ -171,7 +171,19 @@ Nebula usa **`tauri-plugin-updater`** con actualizaciones firmadas (minisign):
   pública embebida, instala y reinicia la aplicación.
 - También se puede comprobar a mano en Configuración → Actualizaciones.
 
-Para publicar una versión: subir la versión con `scripts/bump-version.sh`, compilar con
+### Cómo se numeran las versiones
+
+Nebula usa **MAYOR.MENOR.PARCHE** (`0.1.11`, `0.1.12`, `0.2.0`, `1.0.0`):
+
+- **Parche** (`0.1.11` → `0.1.12`): arreglos, textos, iconos y cambios pequeños.
+- **Menor** (`0.1.12` → `0.2.0`): funciones nuevas o cambios relevantes.
+- **Mayor** (`0.2.0` → `1.0.0`): rediseños o cambios incompatibles.
+
+Los cambios muy pequeños se agrupan en un solo parche; no se publica una
+versión por cada commit. La guía completa está en `VERSIONADO.md`.
+
+Para publicar una versión: subir la versión con `scripts/bump-version.sh`
+(`patch`, `minor`, `major` o `set X.Y.Z`), compilar con
 `TAURI_SIGNING_PRIVATE_KEY` en cada plataforma, generar `latest.json` con
 `create_latest_json.sh` y subir todos los artefactos firmados (`.AppImage`, `.AppImage.sig`,
 `.exe`/`.nsis.zip` de Windows y `latest.json`) al mismo release.

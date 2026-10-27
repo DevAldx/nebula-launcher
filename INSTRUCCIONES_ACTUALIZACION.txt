@@ -46,17 +46,28 @@ una última versión con la clave nueva incrustada. Guarda una copia segura.
 2. SUBIR LA VERSIÓN
 ----------------------------------------
 
-Cada cambio que publiques debe llevar una versión nueva:
+Cada cambio que publiques debe llevar una versión nueva. El formato es
+MAYOR.MENOR.PARCHE y el tipo se elige según el cambio:
 
     cd "/home/dns10011/Escritorio/laucher etc/nebula-launcher-fase7-eufonia"
-    ./scripts/bump-version.sh
 
-    # 0.1.11 -> 0.1.12
-    # También: ./scripts/bump-version.sh minor   (0.2.0)
-    #           ./scripts/bump-version.sh major   (1.0.0)
+    ./scripts/bump-version.sh          # parche: 0.1.11 -> 0.1.12
+    ./scripts/bump-version.sh patch    # igual que el anterior
+    ./scripts/bump-version.sh minor    # cambio relevante: 0.1.11 -> 0.2.0
+    ./scripts/bump-version.sh major    # cambio grande: 0.1.11 -> 1.0.0
+    ./scripts/bump-version.sh set 2.1.0  # versión exacta, siempre mayor
+
+    # Arreglo, texto, icono o retoque visual -> parche
+    # Función nueva o cambio que el usuario nota -> menor
+    # Rediseño o cambio incompatible -> mayor
+    # Varios cambios diminutos -> un solo parche, no una release por commit
+
+Nunca reutilices una versión ya publicada. Si un release falla, publica el
+siguiente parche. La guía completa está en VERSIONADO.md.
 
 Actualiza package.json, package-lock.json, src-tauri/tauri.conf.json,
-src-tauri/Cargo.toml y la versión del workspace (nebula-core).
+src-tauri/Cargo.toml y la versión del workspace (nebula-core). Cargo.lock
+se actualiza solo al compilar.
 
 
 ----------------------------------------
@@ -177,7 +188,7 @@ La app no detecta la actualización
 8. CHECKLIST RÁPIDO
 ----------------------------------------
 
-    ./scripts/bump-version.sh
+    ./scripts/bump-version.sh          # o minor / major / set X.Y.Z
     export PATH="$HOME/.cargo/bin:$PATH"
     export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
     npm run tauri build

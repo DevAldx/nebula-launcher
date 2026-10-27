@@ -2,10 +2,18 @@
 RESUMEN RÁPIDO
 ========================================
 
-1. ./scripts/bump-version.sh
+1. Elige el tipo de versión:
+     ./scripts/bump-version.sh          # parche (cambio pequeño)
+     ./scripts/bump-version.sh minor    # cambio relevante
+     ./scripts/bump-version.sh major    # cambio grande
+     ./scripts/bump-version.sh set 2.1.0
 2. export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
 3. npm run tauri build
 4. GITHUB_REPO="DevAldx/nebula-launcher" ./create_latest_json.sh
 5. Publicar release con tag vX.Y.Z + artefactos + latest.json
 
-Guía completa: INSTRUCCIONES_ACTUALIZACION.txt
+Regla: parche = arreglos/iconos/textos; menor = función nueva; mayor =
+rediseño o cambio incompatible. Agrupa los cambios diminutos en un solo
+parche y no reutilices una versión publicada.
+
+Guía completa: VERSIONADO.md e INSTRUCCIONES_ACTUALIZACION.txt

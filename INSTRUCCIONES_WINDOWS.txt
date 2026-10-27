@@ -149,7 +149,7 @@ Si algún día hace falta ARM64, hay que añadir otro job con
 El feed latest.json puede incluir Linux y Windows a la vez. El orden es:
 
   cd "/home/dns10011/Escritorio/laucher etc/nebula-launcher-fase7-eufonia"
-  ./scripts/bump-version.sh                 # ya hecho para 0.1.11
+  ./scripts/bump-version.sh                 # patch; o minor / major / set X.Y.Z
   export PATH="$HOME/.cargo/bin:$PATH"
   export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
   npm run tauri build                       # AppImage Linux firmado

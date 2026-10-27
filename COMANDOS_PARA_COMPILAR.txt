@@ -15,13 +15,17 @@ Salida:
     src-tauri/target/release/bundle/appimage/
 
 Publicar una versión nueva:
-    ./scripts/bump-version.sh
+    ./scripts/bump-version.sh          # parche (arreglos, iconos, textos)
+    ./scripts/bump-version.sh minor    # función nueva o cambio relevante
+    ./scripts/bump-version.sh major    # rediseño o cambio incompatible
+    ./scripts/bump-version.sh set 2.1.0
     export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
     npm run tauri build
     GITHUB_REPO="DevAldx/nebula-launcher" ./create_latest_json.sh
     # Crear release vX.Y.Z y subir .AppImage, .sig y latest.json
 
 Ver la guía completa:
+    VERSIONADO.md                (cuándo usar parche/menor/mayor)
     INSTRUCCIONES_ACTUALIZACION.txt
     INSTRUCCIONES_WINDOWS.txt   (instalador NSIS y CI)
 
