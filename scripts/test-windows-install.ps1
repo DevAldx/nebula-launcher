@@ -73,6 +73,15 @@ public class Win32 {
     [DllImport("user32.dll")]
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
+    [DllImport("user32.dll")]
+    public static extern bool SetCursorPos(int X, int Y);
+
+    [DllImport("user32.dll")]
+    public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
+
+    public const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
+    public const uint MOUSEEVENTF_LEFTUP = 0x0004;
+
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT {
         public int Left;
@@ -148,6 +157,47 @@ function Find-WindowForProcess {
     }
     [void][Win32]::EnumWindows($callback, [IntPtr]::Zero)
     return $script:foundWindow
+}
+
+function Find-WindowByTitle {
+    param([int]$TargetProcessId, [string]$TitleContains)
+    $script:foundWindowByTitle = [IntPtr]::Zero
+    $callback = [Win32+EnumWindowsProc]{
+        param([IntPtr]$hWnd, [IntPtr]$lParam)
+        $windowPid = [uint32]0
+        [void][Win32]::GetWindowThreadProcessId($hWnd, [ref]$windowPid)
+        if ($windowPid -eq $TargetProcessId -and [Win32]::IsWindowVisible($hWnd)) {
+            $title = Get-WindowTitle -Handle $hWnd
+            if ($title -like "*$TitleContains*") {
+                $script:foundWindowByTitle = $hWnd
+                return $false
+            }
+        }
+        return $true
+    }
+    [void][Win32]::EnumWindows($callback, [IntPtr]::Zero)
+    return $script:foundWindowByTitle
+}
+
+function Invoke-WindowClick {
+    param([IntPtr]$Handle, [int]$X, [int]$Y)
+    $rect = New-Object Win32+RECT
+    if (-not [Win32]::GetWindowRect($Handle, [ref]$rect)) {
+        return $false
+    }
+    $screenX = $rect.Left + $X
+    $screenY = $rect.Top + $Y
+    [void][Win32]::ShowWindow($Handle, 5)
+    [void][Win32]::SetForegroundWindow($Handle)
+    Start-Sleep -Milliseconds 500
+    if (-not [Win32]::SetCursorPos($screenX, $screenY)) {
+        return $false
+    }
+    Start-Sleep -Milliseconds 250
+    [Win32]::mouse_event([Win32]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, [UIntPtr]::Zero)
+    Start-Sleep -Milliseconds 80
+    [Win32]::mouse_event([Win32]::MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
+    return $true
 }
 
 function Save-WindowScreenshot {
@@ -290,11 +340,11 @@ $windowHandle = [IntPtr]::Zero
 $app = $null
 $windowSeen = $false
 if ($exe) {
-    $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"
+    $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222 --force-renderer-accessibility"
     try {
         $wvPolicy = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2'
         New-Item -Path $wvPolicy -Force | Out-Null
-        Set-ItemProperty -Path $wvPolicy -Name 'AdditionalBrowserArguments' -Value '--remote-debugging-port=9222' -Type String
+        Set-ItemProperty -Path $wvPolicy -Name 'AdditionalBrowserArguments' -Value '--remote-debugging-port=9222 --force-renderer-accessibility' -Type String
         Write-Report "Política WebView2 AdditionalBrowserArguments aplicada."
     } catch {
         Write-Report "No se pudo aplicar la política WebView2: $($_.Exception.Message)"
@@ -434,6 +484,129 @@ try {
     Write-Report "Error en captura de pantalla: $($_.Exception.Message)"
 }
 
+Write-Section "Ventana dedicada de inicio de sesión"
+$signinButtonFound = $false
+$signinWindowSeen = $false
+$signinCancelled = $false
+if ($windowHandle -ne [IntPtr]::Zero) {
+    try {
+        Add-Type -AssemblyName UIAutomationClient
+        Add-Type -AssemblyName UIAutomationTypes
+        [void][Win32]::ShowWindow($windowHandle, 5)
+        [void][Win32]::SetForegroundWindow($windowHandle)
+        Start-Sleep -Seconds 1
+        $root = [System.Windows.Automation.AutomationElement]::FromHandle($windowHandle)
+        $typeCond = New-Object System.Windows.Automation.PropertyCondition(
+            [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+            [System.Windows.Automation.ControlType]::Button)
+        $buttons = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $typeCond)
+        $msButton = $null
+        foreach ($b in $buttons) {
+            try {
+                if ($b.Current.Name -match '^Microsoft$') { $msButton = $b; break }
+            } catch { continue }
+        }
+        if (-not $msButton) {
+            foreach ($b in $buttons) {
+                try {
+                    if ($b.Current.Name -match 'Microsoft') { $msButton = $b; break }
+                } catch { continue }
+            }
+        }
+        $invoked = $false
+        if ($msButton) {
+            Write-Report "Botón Microsoft encontrado en la UI principal."
+            try {
+                $invoke = $msButton.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+                $invoke.Invoke()
+                $invoked = $true
+                Write-Report "Botón Microsoft invocado por UI Automation."
+            } catch {
+                Write-Report "No se pudo invocar por UI Automation: $($_.Exception.Message)"
+            }
+        } else {
+            Write-Report "El botón Microsoft no aparece en el árbol UIA."
+        }
+        if (-not $invoked) {
+            $clicked = Invoke-WindowClick -Handle $windowHandle -X 919 -Y 183
+            if ($clicked) {
+                $invoked = $true
+                Write-Report "Clic de respaldo en el botón Microsoft (coordenadas relativas 919,183)."
+            } else {
+                Write-Report "ERROR: no se pudo hacer clic en el botón Microsoft."
+            }
+        }
+        if ($invoked) {
+            $signinButtonFound = $true
+            $deadline = (Get-Date).AddSeconds(30)
+            while ((Get-Date) -lt $deadline) {
+                Start-Sleep -Milliseconds 500
+                $signinHandle = Find-WindowByTitle -TargetProcessId $app.Id -TitleContains "Iniciar sesión"
+                if ($signinHandle -ne [IntPtr]::Zero) {
+                    $signinWindowSeen = $true
+                    break
+                }
+            }
+            if ($signinWindowSeen) {
+                $signinTitle = Get-WindowTitle -Handle $signinHandle
+                Write-Report "Ventana dedicada encontrada: handle=$signinHandle título='$signinTitle'"
+                Start-Sleep -Seconds 2
+                $signinShot = Join-Path $outDir "signin-window.png"
+                $shotOk = Save-WindowScreenshot -Handle $signinHandle -Path $signinShot
+                Write-Report "Captura de la ventana dedicada: $shotOk -> $signinShot"
+                $signinRoot = [System.Windows.Automation.AutomationElement]::FromHandle($signinHandle)
+                $signinButtons = $signinRoot.FindAll([System.Windows.Automation.TreeScope]::Descendants, $typeCond)
+                $cancelButton = $null
+                foreach ($b in $signinButtons) {
+                    try {
+                        if ($b.Current.Name -match '^Cancelar$') { $cancelButton = $b; break }
+                    } catch { continue }
+                }
+                $cancelInvoked = $false
+                if ($cancelButton) {
+                    try {
+                        $cancelInvoke = $cancelButton.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+                        $cancelInvoke.Invoke()
+                        $cancelInvoked = $true
+                        Write-Report "Botón Cancelar invocado por UI Automation."
+                    } catch {
+                        Write-Report "No se pudo invocar Cancelar por UI Automation: $($_.Exception.Message)"
+                    }
+                } else {
+                    Write-Report "El botón Cancelar no aparece en el árbol UIA."
+                }
+                if (-not $cancelInvoked) {
+                    $clicked = Invoke-WindowClick -Handle $signinHandle -X 332 -Y 343
+                    if ($clicked) {
+                        $cancelInvoked = $true
+                        Write-Report "Clic de respaldo en Cancelar (coordenadas relativas 332,343)."
+                    } else {
+                        Write-Report "ERROR: no se pudo hacer clic en Cancelar."
+                    }
+                }
+                if ($cancelInvoked) {
+                    $deadline = (Get-Date).AddSeconds(15)
+                    while ((Get-Date) -lt $deadline) {
+                        Start-Sleep -Milliseconds 500
+                        $still = Find-WindowByTitle -TargetProcessId $app.Id -TitleContains "Iniciar sesión"
+                        if ($still -eq [IntPtr]::Zero) {
+                            $signinCancelled = $true
+                            break
+                        }
+                    }
+                    Write-Report "Ventana dedicada cerrada tras Cancelar: $signinCancelled"
+                }
+            } else {
+                Write-Report "ERROR: no apareció la ventana dedicada de inicio de sesión."
+            }
+        }
+    } catch {
+        Write-Report "Error probando la ventana dedicada: $($_.Exception.Message)"
+    }
+} else {
+    Write-Report "No hay ventana principal; se omite la prueba de la ventana dedicada."
+}
+
 Write-Section "WebView2/CDP"
 $cdpOk = $false
 try {
@@ -532,6 +705,9 @@ $summary = [ordered]@{
     window_seen          = $windowSeen
     window_title         = $windowTitle
     app_alive            = $appAlive
+    signin_button_found  = $signinButtonFound
+    signin_window_seen   = $signinWindowSeen
+    signin_cancelled     = $signinCancelled
     webview2_versions    = @($wv2After.Versions)
     webview2_clients     = @($wv2After.Clients)
 }
@@ -563,4 +739,6 @@ if ($installDir) {
 if ($installExit -ne 0) { exit 3 }
 if (-not $exe) { exit 4 }
 if (-not $windowSeen) { exit 5 }
+if ($signinButtonFound -and -not $signinWindowSeen) { exit 6 }
+if ($signinWindowSeen -and -not $signinCancelled) { exit 7 }
 exit 0
