@@ -366,6 +366,33 @@ if ($windowHandle -ne [IntPtr]::Zero) {
     $uniqueClasses | Set-Content -Path (Join-Path $outDir "window-classes.txt") -Encoding UTF8
 }
 
+Write-Section "UI Automation"
+try {
+    Add-Type -AssemblyName UIAutomationClient
+    Add-Type -AssemblyName UIAutomationTypes
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle($windowHandle)
+    $condition = [System.Windows.Automation.Condition]::TrueCondition
+    $elements = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
+    $lines = @()
+    foreach ($el in $elements) {
+        if ($lines.Count -ge 1000) { break }
+        try {
+            $name = $el.Current.Name
+            $type = $el.Current.ControlType.ProgrammaticName
+            $aid = $el.Current.AutomationId
+            if ($name -or $aid) {
+                $lines += "$type`t$name`t$aid"
+            }
+        } catch {
+            continue
+        }
+    }
+    $lines | Set-Content -Path (Join-Path $outDir "uia-tree.txt") -Encoding UTF8
+    Write-Report "Elementos UIA con nombre: $($lines.Count)"
+} catch {
+    Write-Report "UI Automation no disponible: $($_.Exception.Message)"
+}
+
 Write-Section "Capturas"
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms

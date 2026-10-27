@@ -47,6 +47,7 @@ jobs:
             ${{ runner.temp }}/windows-test/cdp-targets.json
             ${{ runner.temp }}/windows-test/cdp-output.txt
             ${{ runner.temp }}/windows-test/window-classes.txt
+            ${{ runner.temp }}/windows-test/uia-tree.txt
             ${{ runner.temp }}/windows-test/crash-dumps.txt
             ${{ runner.temp }}/windows-test/*.png
           if-no-files-found: warn
