@@ -1,6 +1,9 @@
 name: Windows installer test
 
 on:
+  push:
+    branches:
+      - test/windows-installer-0.1.10
   workflow_dispatch:
     inputs:
       version:
@@ -26,8 +29,8 @@ jobs:
       - name: Probar instalador y arranque
         shell: pwsh
         env:
-          TEST_VERSION: ${{ inputs.version }}
-          EXPECTED_SHA256: ${{ inputs.expected_sha256 }}
+          TEST_VERSION: ${{ inputs.version || '0.1.10' }}
+          EXPECTED_SHA256: ${{ inputs.expected_sha256 || '63bd7b177bd02606b0ebf9764d6264871238e3fce622e272687ae3d449f98136' }}
         run: |
           ./scripts/test-windows-install.ps1 -Version $env:TEST_VERSION -ExpectedSha256 $env:EXPECTED_SHA256
 
@@ -35,7 +38,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer-${{ inputs.version }}
+          name: windows-installer-${{ inputs.version || '0.1.10' }}
           path: |
             ${{ runner.temp }}/windows-test/report.txt
             ${{ runner.temp }}/windows-test/summary.json
