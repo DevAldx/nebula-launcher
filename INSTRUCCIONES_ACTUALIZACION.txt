@@ -88,7 +88,9 @@ src-tauri/tauri.windows.conf.json.
 
 También se puede compilar Windows desde Linux con cargo-xwin y NSIS 3.11;
 el comando exacto está en INSTRUCCIONES_WINDOWS.txt, sección 2b. El
-instalador 0.1.11 se generó así, pero aún no se probó en un Windows real.
+instalador 0.1.11 se generó así y se probó en un runner Windows Server 2025
+de GitHub Actions (instalación y ventana de inicio de sesión); falta la
+prueba en un Windows 10/11 de escritorio.
 
 
 ----------------------------------------

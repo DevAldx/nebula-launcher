@@ -9,9 +9,13 @@ Repo de releases:
   https://github.com/DevAldx/nebula-launcher
 
 IMPORTANTE
-  La versión 0.1.11 se compiló desde Linux con cargo-xwin + NSIS. El .exe y su
-  .sig existen, pero NO se han probado en un Windows 10/11 real. Hasta que se
-  pruebe, no se puede afirmar que el instalador funcione en todas las máquinas.
+  La versión 0.1.11 se compiló desde Linux con cargo-xwin + NSIS. Su
+  instalación y la ventana dedicada de inicio de sesión se probaron en un
+  runner windows-latest de GitHub Actions (Windows Server 2025, WebView2
+  155.0.4283.62): SHA-256 correcto, instalación código 0, ventana principal,
+  botón Microsoft, ventana "Nebula — Iniciar sesión" y Cancelar. Aún NO se ha
+  probado en un Windows 10/11 de escritorio ni el flujo completo de juego.
+  Hasta entonces, no se puede afirmar que funcione en todas las máquinas.
 
   Windows 8/8.1 no es compatible: Tauri 2 y el WebView2 actual requieren
   Windows 10/11.
@@ -189,8 +193,11 @@ los espacios por puntos).
 3. Inicio > Iniciar sesión local: escribe un nombre (3-16 letras/números/_).
    Debe aparecer "Cuenta local" y el aviso de online-mode=false.
 4. Ajustes > Cuenta > Microsoft heredado > Iniciar sesión con Microsoft:
-   - Debe mostrar un código y abrir https://www.microsoft.com/link.
-   - Al completar el login, debe volver a Nebula como "Microsoft heredado".
+   - Debe abrir una ventana aparte "Nebula — Iniciar sesión" con el código.
+   - Pulsa "Abrir en el navegador" (o abre https://www.microsoft.com/link)
+     y escribe el código.
+   - Al completar el login, la ventana se cierra y Nebula vuelve como
+     "Microsoft heredado".
    - Cierra y reabre Nebula: la cuenta debe seguir ahí (refresh token).
    - Este método no requiere Azure; si Microsoft lo bloquea, prueba la vía
      oficial con tu propio Client ID o la cuenta local.

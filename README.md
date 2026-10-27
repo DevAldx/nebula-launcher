@@ -65,10 +65,11 @@ npm run tauri build            # AppImage (Linux) o NSIS (Windows)
 | Todo lo de las Fases 1 a 6 | Real, sin cambios |
 | **Cuenta local (sin Azure)**: nombre de jugador guardado en disco, UUID determinista (`MD5("OfflinePlayer:<nombre>")`) y aviso de `online-mode=false` | Real |
 | **Cuenta Microsoft**: flujo oficial con código de dispositivo y tu propia app de Azure, o flujo heredado sin Azure con el Client ID público del launcher oficial | Real; el heredado es opcional y no oficial |
+| **Inicio de sesión en ventana dedicada**: el código de Microsoft se muestra en una ventana aparte, con copiar, abrir en el navegador y Cancelar; la interfaz principal no se cubre con un modal | Real en Linux; ventana y Cancelar probados en Windows Server 2025 |
 | **Java automático**: al jugar o importar, si falta la versión mayor exacta que pide Minecraft, descarga el JRE de Eclipse Temurin desde Adoptium, verifica SHA-256 y lo extrae en `data/java/temurin-<mayor>` | Real |
 | **Importar por código**: busca `NBL-XXXXXX`, muestra una vista previa (nombre, descripción, versión, loader, nº de archivos, si tu Java cumple el mínimo que pide) y, si confirmas, crea la instancia con su **nombre** y descarga mods/resourcepacks/shaders/config **y el fondo remoto** verificando SHA-1 y tamaño, sin repetir lo que ya esté completo, con progreso real | Real |
 | **Exportar**: genera una plantilla de manifiesto con los datos de tu instancia y la lista de tus mods activos, guardada en su propia carpeta | Real — pero sin URLs de descarga, porque no hay dónde subir los archivos (ver abajo) |
-| **Windows**: rutas, `java.exe`, detección en Program Files, classpath con `;`, configuración NSIS, iconos `.ico` e instalador compilado desde Linux con `cargo-xwin` | Compilado; **falta probarlo en un Windows 10/11 real**. Windows 8/8.1 no es compatible con Tauri 2/WebView2 moderno |
+| **Windows**: rutas, `java.exe`, detección en Program Files, classpath con `;`, configuración NSIS, iconos `.ico` e instalador compilado desde Linux con `cargo-xwin` | Instalador probado en Windows Server 2025 (GitHub Actions); **falta un Windows 10/11 de escritorio y el flujo completo de juego**. Windows 8/8.1 no es compatible con Tauri 2/WebView2 moderno |
 | Icono de Halloween en la app, ventana e instaladores | Real |
 | Cancelar una importación a mitad | No incluido todavía — sí hereda los reintentos y la verificación del resto del sistema de descargas |
 
@@ -194,10 +195,13 @@ y hay dos formas de compilar el instalador NSIS:
    `TAURI_SIGNING_PRIVATE_KEY` y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
 El instalador se genera en `src-tauri/target/release/bundle/nsis/`. La versión
-0.1.11 se compiló desde Linux con `cargo-xwin` y NSIS; el `.exe` y su `.sig`
-existen, pero **no se han probado en un Windows 10/11 real**. Windows 8/8.1 no
-es viable: Tauri 2 y el WebView2 actual ya no lo soportan. La guía está en
-`INSTRUCCIONES_WINDOWS.txt`.
+0.1.11 se compiló desde Linux con `cargo-xwin` y NSIS. Su instalación y la
+ventana dedicada de inicio de sesión se probaron en un runner `windows-latest`
+de GitHub Actions (Windows Server 2025): instalación correcta, ventana
+«Nebula Launcher», botón Microsoft, ventana «Nebula — Iniciar sesión» y
+Cancelar. **Falta probarlo en un Windows 10/11 de escritorio** y el flujo
+completo de juego. Windows 8/8.1 no es viable: Tauri 2 y el WebView2 actual ya
+no lo soportan. La guía está en `INSTRUCCIONES_WINDOWS.txt`.
 
 **Wine/Bottles no es compatible.** El instalador NSIS intenta descargar e
 instalar WebView2 y falla (código 2) porque Wine no lo soporta; aunque se

@@ -43,7 +43,15 @@ Fecha: 2026-10-26
   el flujo y reiniciaron la ventana principal.
 - Login completo con una cuenta de prueba: la ventana principal mostró la
   cuenta y la skin después de terminar el flujo de Microsoft.
-- El instalador de Windows se genera y se firma. La prueba automatizada se
-  ejecuta en un runner `windows-latest` de GitHub Actions (Windows Server 2025,
-  no un Windows 10/11 de escritorio). El flujo completo de cuenta local,
-  creación de instancia y lanzamiento de Minecraft en Windows sigue pendiente.
+- Prueba automatizada del instalador Windows en GitHub Actions
+  ([run 40452796414](https://github.com/DevAldx/nebula-launcher/actions/runs/40452796414),
+  runner `windows-latest`, Windows Server 2025, WebView2 155.0.4283.62):
+  SHA-256 correcto, instalación silenciosa con código 0, la app abrió la
+  ventana «Nebula Launcher», el botón Microsoft se pulsó por UI Automation,
+  apareció la ventana separada «Nebula — Iniciar sesión» con el código y el
+  enlace, y Cancelar la cerró y devolvió el flujo a la ventana principal.
+  Desinstalación correcta y sin eventos de error.
+- Esa prueba es en Windows Server 2025, no en un Windows 10/11 de escritorio.
+  No se probaron en Windows el botón «Abrir en el navegador», el login
+  completo, la cuenta local, la creación de una instancia ni el lanzamiento
+  de Minecraft.
