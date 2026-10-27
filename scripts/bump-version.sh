@@ -35,6 +35,7 @@ Uso: ./scripts/bump-version.sh [patch|minor|major|set X.Y.Z]
   minor        Sube el menor y reinicia el parche. Ejemplo: 0.1.11 -> 0.2.0
   major        Sube el mayor y reinicia menor/parche. Ejemplo: 0.1.11 -> 1.0.0
   set X.Y.Z    Fija una versión exacta mayor que la actual. Ejemplo: 2.1.0
+  X.Y.Z        Atajo de set. Ejemplo: 1.10.1
 
 Sin argumentos equivale a patch.
 
@@ -79,9 +80,13 @@ case "${1:-patch}" in
     exit 0
     ;;
   *)
-    echo "ERROR: opción desconocida: $1" >&2
-    usage >&2
-    exit 1
+    if [[ "$1" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+      NEW_VERSION="$1"
+    else
+      echo "ERROR: opción desconocida: $1" >&2
+      usage >&2
+      exit 1
+    fi
     ;;
 esac
 

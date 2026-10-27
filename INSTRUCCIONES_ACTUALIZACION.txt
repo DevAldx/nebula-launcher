@@ -56,6 +56,7 @@ MAYOR.MENOR.PARCHE y el tipo se elige según el cambio:
     ./scripts/bump-version.sh minor    # cambio relevante: 0.1.11 -> 0.2.0
     ./scripts/bump-version.sh major    # cambio grande: 0.1.11 -> 1.0.0
     ./scripts/bump-version.sh set 2.1.0  # versión exacta, siempre mayor
+    ./scripts/bump-version.sh 2.1.0      # atajo equivalente a set
 
     # Arreglo, texto, icono o retoque visual -> parche
     # Función nueva o cambio que el usuario nota -> menor

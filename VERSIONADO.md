@@ -64,6 +64,7 @@ cd "/home/dns10011/Escritorio/laucher etc/nebula-launcher-fase7-eufonia"
 ./scripts/bump-version.sh minor        # cambio relevante
 ./scripts/bump-version.sh major        # cambio grande
 ./scripts/bump-version.sh set 2.1.0    # versión exacta, siempre mayor
+./scripts/bump-version.sh 2.1.0        # atajo equivalente a set
 ./scripts/bump-version.sh --help       # ayuda
 ```
 

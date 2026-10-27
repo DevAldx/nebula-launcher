@@ -7,6 +7,7 @@ RESUMEN RÁPIDO
      ./scripts/bump-version.sh minor    # cambio relevante
      ./scripts/bump-version.sh major    # cambio grande
      ./scripts/bump-version.sh set 2.1.0
+     ./scripts/bump-version.sh 2.1.0      # atajo de set
 2. export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
 3. npm run tauri build
 4. GITHUB_REPO="DevAldx/nebula-launcher" ./create_latest_json.sh
