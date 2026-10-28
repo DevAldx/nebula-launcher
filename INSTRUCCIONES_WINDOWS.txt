@@ -2,24 +2,25 @@
 NEBULA LAUNCHER — WINDOWS
 ========================================
 
-Última revisión: versión 0.2.0
+Última revisión: versión 0.3.0
 Carpeta del proyecto (Linux):
   /home/dns10011/Escritorio/laucher etc/nebula-launcher-fase7-eufonia
 Repo de releases:
   https://github.com/DevAldx/nebula-launcher
 
 IMPORTANTE
-  La versión 0.2.0 se compiló desde Linux con cargo-xwin + NSIS. Su
-  instalación, la ventana dedicada de inicio de sesión y la personalización
-  se probaron en un runner windows-latest de GitHub Actions (Windows Server
-  2025, WebView2 155.0.4283.62): SHA-256 correcto, instalación código 0,
-  ventana principal, botón Microsoft, ventana "Nebula — Iniciar sesión" y
-  Cancelar. Con UI Automation se comprobó el icono PNG, el fondo GIF, el tema
-  púrpura, el acento #22c55e, el desenfoque de 15 px y el oscurecimiento del
-  60 %: se guardaron en %APPDATA%\nebula\nebula\config y persistieron tras
-  reiniciar. El aviso legal también estaba visible. Aún NO se ha probado en
-  un Windows 10/11 de escritorio ni el flujo completo de juego. Hasta
-  entonces, no se puede afirmar que funcione en todas las máquinas.
+  La versión 0.3.0 se compila desde Linux con cargo-xwin + NSIS. La prueba
+  de interfaz se hará en un runner windows-latest de GitHub Actions (Windows
+  Server 2025): instalación, arranque, splash, inicio de sesión,
+  personalización y aviso legal. La versión 0.2.0 ya se probó allí con
+  SHA-256 correcto, instalación código 0, ventana principal, botón Microsoft,
+  ventana "Nebula — Iniciar sesión" y Cancelar. Con UI Automation se comprobó
+  el icono PNG, el fondo GIF, el tema púrpura, el acento #22c55e, el desenfoque
+  de 15 px y el oscurecimiento del 60 %: se guardaron en
+  %APPDATA%\nebula\nebula\config y persistieron tras reiniciar. El aviso legal
+  también estaba visible. Aún NO se ha probado en un Windows 10/11 de
+  escritorio ni el flujo completo de juego. Hasta entonces, no se puede
+  afirmar que funcione en todas las máquinas.
 
   Windows 8/8.1 no es compatible: Tauri 2 y el WebView2 actual requieren
   Windows 10/11.
@@ -48,8 +49,9 @@ IMPORTANTE
 - Abrir carpetas con explorer.exe y URLs con rundll32 (sin shell intermedio).
 - Iconos .ico/.icns, icono de Halloween y configuración NSIS en
   src-tauri/tauri.windows.conf.json.
-- Script local scripts/build-windows.ps1 y CI .github/workflows/build-windows.yml.
-- Compilación cruzada desde Linux con cargo-xwin (la usada para 0.1.11 y 0.2.0).
+- Script local scripts/build-windows.ps1 y CI de prueba
+  .github/workflows/test-windows-installer.yml.
+- Compilación cruzada desde Linux con cargo-xwin (la usada para 0.1.11, 0.2.0 y 0.3.0).
 
 
 ----------------------------------------
@@ -82,8 +84,8 @@ O manualmente:
 
 Resultado:
   src-tauri\target\release\bundle\nsis\
-    Nebula Launcher_0.2.0_x64-setup.exe
-    Nebula Launcher_0.2.0_x64-setup.exe.sig
+    Nebula Launcher_0.3.0_x64-setup.exe
+    Nebula Launcher_0.3.0_x64-setup.exe.sig
 
 El .sig se genera solo porque bundle.createUpdaterArtifacts = true. Si no
 aparece, el build no vio TAURI_SIGNING_PRIVATE_KEY.
@@ -97,8 +99,14 @@ y ofrece español e inglés.
 ----------------------------------------
 
 Requisitos: Rust, clang/lld, Node 20, cargo-xwin y NSIS 3.11 para Linux.
-Tauri busca el ejecutable como `makensis.exe`; si solo tienes `makensis`,
-crea un wrapper en el PATH que exporte NSISDIR y ejecute el binario real.
+En Linux, Tauri 2 ejecuta `makensis` (sin `.exe`). Si solo tienes
+`makensis.exe` o quieres fijar `NSISDIR`, crea un wrapper llamado `makensis`
+en el PATH que exporte NSISDIR y ejecute el binario real:
+
+  # /ruta/al/wrapper/makensis
+  #!/bin/sh
+  export NSISDIR="/ruta/a/nsis/usr/share/nsis"
+  exec /ruta/a/nsis/usr/bin/makensis "$@"
 
   export PATH="/ruta/al/wrapper:$HOME/.cargo/bin:$PATH"
   export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
@@ -110,39 +118,38 @@ crea un wrapper en el PATH que exporte NSISDIR y ejecute el binario real.
 
 Resultado:
   src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/
-    Nebula Launcher_0.2.0_x64-setup.exe
-    Nebula Launcher_0.2.0_x64-setup.exe.sig
+    Nebula Launcher_0.3.0_x64-setup.exe
+    Nebula Launcher_0.3.0_x64-setup.exe.sig
 
 Los avisos sobre `libcmt.amd64.pdb` son normales con cargo-xwin y no impiden
 el enlazado.
 
 
 ----------------------------------------
-3. COMPILAR EN GITHUB ACTIONS (sin PC Windows)
+3. PROBAR EN GITHUB ACTIONS (sin PC Windows)
 ----------------------------------------
 
-El workflow ya está en .github/workflows/build-windows.yml, pero necesita que
-el código esté subido a GitHub (hoy el repo público solo tiene README) y estos
-secretos en Settings > Secrets and variables > Actions:
-
-  TAURI_SIGNING_PRIVATE_KEY           (contenido de nebula-launcher.key)
-  TAURI_SIGNING_PRIVATE_KEY_PASSWORD  (vacío si la clave no tiene contraseña;
-                                       GitHub no acepta secretos vacíos, así que
-                                       si no hay contraseña puedes omitirlo y
-                                       quitar la variable del workflow)
+El repositorio incluye .github/workflows/test-windows-installer.yml, que
+descarga un instalador ya publicado y lo prueba en windows-latest. No compila
+el .exe: para compilarlo usa cargo-xwin (sección 2b) o un PC Windows (sección 2).
 
 Formas de lanzarlo:
-  - Manual: Actions > Compilar Windows > Run workflow.
-  - Con un tag: al publicar un tag vX.Y.Z (push tags) se compila solo.
+  - Manual: Actions > Windows installer test > Run workflow.
+  - Push a la rama test/windows-installer-0.3.0 (o cambia la rama del
+    workflow si prefieres otra).
 
-Descarga el artefacto "nebula-windows-nsis" desde la ejecución del workflow.
-Contiene el .exe y su .sig.
+El workflow acepta dos entradas:
+  - version: versión publicada, por ejemplo 0.3.0.
+  - expected_sha256: SHA-256 del instalador, para comprobar que se descargó
+    el archivo correcto.
 
-Nota: el workflow usa `npm ci`; si falta package-lock.json, ejecuta
-`npm install` y súbelo. El lockfile ya está en el proyecto.
+Descarga el instalador desde la release y ejecuta
+scripts/test-windows-install.ps1. Al terminar sube un artefacto con el
+informe, el log de eventos, la lista de archivos instalados, capturas y el
+árbol de UI Automation.
 
-Ojo: el workflow compila en windows-latest, que es x86_64. No genera ARM64.
-Si algún día hace falta ARM64, hay que añadir otro job con
+Ojo: el runner windows-latest es x86_64. No genera ARM64. Si algún día hace
+falta ARM64, hay que añadir otro job con
 `--target aarch64-pc-windows-msvc` y subir su propio artefacto.
 
 
@@ -164,7 +171,7 @@ El feed latest.json puede incluir Linux y Windows a la vez. El orden es:
   # y después:
   GITHUB_REPO="DevAldx/nebula-launcher" ./create_latest_json.sh
 
-  # Crear el release v0.2.0 y subir:
+  # Crear el release v0.3.0 y subir:
   #   Linux:   *.AppImage, *.AppImage.sig
   #   Windows: *-setup.exe, *-setup.exe.sig
   #   latest.json
@@ -210,9 +217,16 @@ los espacios por puntos).
    - El juego debe arrancar con el classpath correcto (separador `;`).
 6. Importa una instancia compartida con background_url y comprueba que
    aparece el fondo y el nombre del manifiesto.
-7. Comprueba Ajustes > Actualizaciones y que la versión mostrada es 0.1.11.
-8. Si algo falla, guarda el log de la instancia y el mensaje exacto antes de
-   cambiar nada.
+7. Al abrir Nebula, comprueba que aparece la ventana de bienvenida con la
+   animación, el progreso y la versión; después debe abrirse la ventana
+   principal. Si la comprobación de actualizaciones tarda, la ventana
+   principal debe abrirse igualmente en menos de 12 s.
+8. Abre Acerca de desde la barra lateral: debe mostrar el copyright de Nebula,
+   las marcas de Mojang/Microsoft y el aviso de no afiliación. Comprueba
+   también el pie de la barra lateral.
+9. Comprueba Ajustes > Actualizaciones y que la versión mostrada es 0.3.0.
+10. Si algo falla, guarda el log de la instancia y el mensaje exacto antes de
+    cambiar nada.
 
 
 ----------------------------------------

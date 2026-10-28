@@ -21,14 +21,15 @@ crates/nebula-core/   Lógica pura (sin Tauri), 100 tests
   paths.rs            XDG en Linux; AppData/Local en Windows
 installer/             Segunda app de Tauri: instala el AppImage, crea el acceso del menú (Linux)
 scripts/               bump-version.sh, build-windows.ps1
-.github/workflows/     CI opcional para compilar el instalador NSIS en Windows
+.github/workflows/     CI de prueba del instalador NSIS en Windows
 
 `minecraft/fabric.rs` resuelve la versión de Fabric Loader y fusiona su perfil de
 lanzamiento con el JSON vanilla (reglas de `inheritsFrom`: `mainClass` propio,
 `libraries`/`arguments` añadidas después de las de vanilla; `assetIndex`,
 `downloads` y `javaVersion` se quedan como en vanilla).
 src-tauri/            Capa fina de comandos IPC (workspace propio, exigido por Tauri)
-src/                  Frontend Svelte: Inicio, Instancias, Personalizar, Configuración
+src/                  Frontend Svelte: splash de bienvenida, Inicio, Instancias,
+                      Personalizar, Ajustes y Acerca de
 ```
 
 Módulos del spec que se añaden en sus fases (como módulos de `nebula-core` o crates nuevos):
@@ -71,6 +72,8 @@ npm run tauri build            # AppImage (Linux) o NSIS (Windows)
 | **Exportar**: genera una plantilla de manifiesto con los datos de tu instancia y la lista de tus mods activos, guardada en su propia carpeta | Real — pero sin URLs de descarga, porque no hay dónde subir los archivos (ver abajo) |
 | **Windows**: rutas, `java.exe`, detección en Program Files, classpath con `;`, configuración NSIS, iconos `.ico` e instalador compilado desde Linux con `cargo-xwin` | Instalador probado en Windows Server 2025 (GitHub Actions); **falta un Windows 10/11 de escritorio y el flujo completo de juego**. Windows 8/8.1 no es compatible con Tauri 2/WebView2 moderno |
 | **Personalización del launcher**: icono propio, tema, color de acento, transparencia, animaciones y fondo general con PNG/JPG/WEBP/GIF animados | Real en Linux; icono, fondo, tema y efectos probados en Windows Server 2025 |
+| **Ventana de bienvenida**: animación con progreso real, comprobación de la versión más reciente, detección de Java y lectura de instancias antes de abrir la ventana principal | Real en Linux; el build con recursos embebidos muestra la animación y la transición. En modo dev WebKit puede fallar al cargar dos webviews de Vite a la vez |
+| **Copyright y «Acerca de»**: página con copyright de Nebula, marcas de Mojang/Microsoft, aviso de no afiliación y créditos; enlace desde la barra lateral y Ajustes | Real |
 | Icono de Halloween en la app, ventana e instaladores | Real (se puede cambiar el de la ventana y la barra lateral desde Personalizar) |
 | Cancelar una importación a mitad | No incluido todavía — sí hereda los reintentos y la verificación del resto del sistema de descargas |
 
@@ -100,6 +103,10 @@ Nebula Launcher es un proyecto independiente. **No está afiliado, asociado, aut
 respaldado ni patrocinado por Mojang Studios, Microsoft Corporation ni sus filiales.**
 Minecraft es una marca registrada de Mojang Studios. Nebula no incluye ni distribuye Minecraft:
 descarga los archivos oficiales desde los servidores de Mojang con tu propia cuenta.
+
+El copyright completo, las marcas de Mojang/Microsoft y los créditos están en la página
+**Acerca de**, accesible desde la barra lateral y desde Ajustes. La barra lateral muestra
+«© 2026 Nebula» y el aviso «Minecraft © Mojang · No afiliado».
 
 ## Instancias compartibles: qué es real y qué falta
 
@@ -164,12 +171,12 @@ carpeta de cada tarjeta abre la raíz de la instancia para copiarla.
 
 ## Cómo ejecutar el AppImage ya construido
 
-Descarga `Nebula.Launcher_0.2.0_amd64.AppImage` desde la página de releases:
-<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.2.0>
+Descarga `Nebula.Launcher_0.3.0_amd64.AppImage` desde la página de releases:
+<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.3.0>
 
 ```
-chmod +x "Nebula.Launcher_0.2.0_amd64.AppImage"
-./"Nebula.Launcher_0.2.0_amd64.AppImage"
+chmod +x "Nebula.Launcher_0.3.0_amd64.AppImage"
+./"Nebula.Launcher_0.3.0_amd64.AppImage"
 ```
 
 El AppImage no necesita instalación. Si quieres una entrada en el menú de
@@ -201,11 +208,11 @@ Nebula usa **`tauri-plugin-updater`** con actualizaciones firmadas (minisign):
 
 ### Cómo se numeran las versiones
 
-Nebula usa **MAYOR.MENOR.PARCHE** (`0.2.0`, `0.2.1`, `0.3.0`, `1.0.0`):
+Nebula usa **MAYOR.MENOR.PARCHE** (`0.3.0`, `0.3.1`, `0.4.0`, `1.0.0`):
 
-- **Parche** (`0.2.0` → `0.2.1`): arreglos, textos, iconos y cambios pequeños.
-- **Menor** (`0.2.1` → `0.3.0`): funciones nuevas o cambios relevantes.
-- **Mayor** (`0.3.0` → `1.0.0`): rediseños o cambios incompatibles.
+- **Parche** (`0.3.0` → `0.3.1`): arreglos, textos, iconos y cambios pequeños.
+- **Menor** (`0.3.1` → `0.4.0`): funciones nuevas o cambios relevantes.
+- **Mayor** (`0.4.0` → `1.0.0`): rediseños o cambios incompatibles.
 
 Los cambios muy pequeños se agrupan en un solo parche; no se publica una
 versión por cada commit. La guía completa está en `VERSIONADO.md`.
@@ -226,25 +233,27 @@ en el navegador.
 
 El código ya contempla Windows (rutas, `java.exe`, detección de Java en
 `Program Files`, classpath con `;`, escritura atómica compatible, iconos `.ico`)
-y hay dos formas de compilar el instalador NSIS:
+y hay tres formas de compilar o probar el instalador NSIS:
 
 1. **En un PC con Windows**: `scripts/build-windows.ps1` (requiere Rust MSVC,
    Node, Build Tools C++ y la clave de firma).
-2. **Con GitHub Actions**: `.github/workflows/build-windows.yml` compila y
-   firma al crear un tag `v*` o al lanzarlo a mano. Necesita los secretos
-   `TAURI_SIGNING_PRIVATE_KEY` y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+2. **Desde Linux**: `cargo-xwin` + NSIS 3.11 (sección 2b de
+   `INSTRUCCIONES_WINDOWS.txt`). Así se compiló 0.3.0.
+3. **Con GitHub Actions**: `.github/workflows/test-windows-installer.yml`
+   descarga un `.exe` ya publicado y lo prueba en `windows-latest`. No compila
+   el instalador; para eso usa la opción 1 o 2.
 
 El instalador se genera en `src-tauri/target/release/bundle/nsis/`. La versión
-0.2.0 se compiló desde Linux con `cargo-xwin` y NSIS. Su instalación, la
-ventana dedicada de inicio de sesión y la personalización se probaron en un
-runner `windows-latest` de GitHub Actions (Windows Server 2025, WebView2
-155.0.4283.62): SHA-256 correcto, instalación con código 0, ventana «Nebula
-Launcher», botón Microsoft, ventana «Nebula — Iniciar sesión» y Cancelar;
-icono PNG, fondo GIF, tema púrpura, acento `#22c55e`, desenfoque de 15 px y
-oscurecimiento del 60 % guardados y persistentes tras reiniciar; aviso legal
-visible. **Falta probarlo en un Windows 10/11 de escritorio** y el flujo
-completo de juego. Windows 8/8.1 no es viable: Tauri 2 y el WebView2 actual ya
-no lo soportan. La guía está en `INSTRUCCIONES_WINDOWS.txt`.
+0.2.0 se probó en un runner `windows-latest` de GitHub Actions (Windows Server
+2025, WebView2 155.0.4283.62): SHA-256 correcto, instalación con código 0,
+ventana «Nebula Launcher», botón Microsoft, ventana «Nebula — Iniciar sesión» y
+Cancelar; icono PNG, fondo GIF, tema púrpura, acento `#22c55e`, desenfoque de
+15 px y oscurecimiento del 60 % guardados y persistentes tras reiniciar; aviso
+legal visible. La prueba de interfaz de 0.3.0 se ejecutará en el mismo runner
+después de publicar la release. **Falta probarlo en un Windows 10/11 de
+escritorio** y el flujo completo de juego. Windows 8/8.1 no es viable: Tauri 2
+y el WebView2 actual ya no lo soportan. La guía está en
+`INSTRUCCIONES_WINDOWS.txt`.
 
 **Wine/Bottles no es compatible.** El instalador NSIS intenta descargar e
 instalar WebView2 y falla (código 2) porque Wine no lo soporta; aunque se

@@ -2,20 +2,25 @@ import { mount } from "svelte";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./app.css";
 import App from "./App.svelte";
+import Splash from "./Splash.svelte";
 import SignInWindow from "./SignInWindow.svelte";
 
-/** La ventana de inicio de sesión carga el mismo bundle, pero monta otra UI. */
-function isSignInWindow(): boolean {
+/** La etiqueta de la ventana decide qué interfaz monta el mismo bundle. */
+function windowLabel(): string {
   try {
-    return getCurrentWindow().label === "signin";
+    return getCurrentWindow().label;
   } catch {
     // Si se abre el frontend en un navegador normal, no hay ventana Tauri.
-    return false;
+    return "";
   }
 }
 
 const target = document.getElementById("app")!;
-if (isSignInWindow()) {
+const label = windowLabel();
+
+if (label === "splash") {
+  mount(Splash, { target });
+} else if (label === "signin") {
   mount(SignInWindow, { target });
 } else {
   mount(App, { target });

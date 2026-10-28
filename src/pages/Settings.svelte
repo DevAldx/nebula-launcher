@@ -5,6 +5,8 @@
   import Icon from "../components/Icon.svelte";
   import type { Settings, UpdateCheck } from "../lib/types";
 
+  let { gotoAbout }: { gotoAbout?: () => void } = $props();
+
   // Copia editable; se persiste solo al pulsar «Guardar».
   let draft = $state<Settings>(structuredClone($state.snapshot(app.settings!)));
   let jvm = $state(joinArgs(draft.minecraft.jvm_args));
@@ -246,10 +248,18 @@
     respaldado ni patrocinado por Mojang Studios, Microsoft Corporation ni sus filiales.
   </p>
   <p>
-    Minecraft es una marca registrada de Mojang Studios. Nebula no incluye ni distribuye
-    Minecraft: descarga los archivos oficiales desde los servidores de Mojang con tu propia cuenta.
+    Minecraft es una marca registrada de Mojang Studios. © Mojang Studios. Todos los derechos
+    reservados. Nebula no incluye ni distribuye Minecraft: descarga los archivos oficiales desde
+    los servidores de Mojang con tu propia cuenta.
   </p>
-  <p class="hint">© 2026 Nebula Launcher · Código bajo licencia MIT.</p>
+  <p class="hint">© 2026 Nebula Launcher · Código bajo licencia MIT · Versión v{app.info?.version}</p>
+  {#if gotoAbout}
+    <div>
+      <button class="btn" onclick={gotoAbout}>
+        <Icon name="info" size={16} /> Ver copyright y créditos
+      </button>
+    </div>
+  {/if}
 </section>
 <br />
 

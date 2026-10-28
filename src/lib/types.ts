@@ -91,6 +91,16 @@ export interface AppInfo {
   config_dir: string;
 }
 
+export interface StartupProgress {
+  step: number;
+  total: number;
+  percent: number;
+  label: string;
+  detail: string | null;
+  done: boolean;
+  version: string;
+}
+
 export interface JavaRuntime {
   path: string;
   major: number;

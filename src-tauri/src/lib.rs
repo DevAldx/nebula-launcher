@@ -4,6 +4,7 @@
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex, MutexGuard},
+    time::Duration,
 };
 
 use nebula_core::{
@@ -43,6 +44,8 @@ struct AppState {
     auth_http: reqwest::Client,
     sign_in_cancel: Mutex<Option<oneshot::Sender<()>>>,
     sign_in_code: Mutex<Option<SignInCodeState>>,
+    /// Progreso real del arranque que muestra la ventana de bienvenida.
+    startup: Mutex<StartupProgress>,
 }
 
 impl AppState {
@@ -70,6 +73,12 @@ impl AppState {
         &self,
     ) -> Result<MutexGuard<'_, Option<SignInCodeState>>, CommandError> {
         self.sign_in_code
+            .lock()
+            .map_err(|_| CommandError::new("estado interno corrupto, reinicia Nebula"))
+    }
+
+    fn startup(&self) -> Result<MutexGuard<'_, StartupProgress>, CommandError> {
+        self.startup
             .lock()
             .map_err(|_| CommandError::new("estado interno corrupto, reinicia Nebula"))
     }
@@ -119,6 +128,33 @@ const MAX_MOD_FILES: usize = 256;
 
 type CmdResult<T> = Result<T, CommandError>;
 
+/// Estado que consume la ventana de bienvenida. Se guarda además de emitirse
+/// para que la ventana pueda recuperarlo aunque llegue tarde al evento.
+#[derive(Clone, Serialize)]
+struct StartupProgress {
+    step: u8,
+    total: u8,
+    percent: u8,
+    label: String,
+    detail: Option<String>,
+    done: bool,
+    version: String,
+}
+
+impl StartupProgress {
+    fn new() -> Self {
+        Self {
+            step: 0,
+            total: 5,
+            percent: 4,
+            label: "Iniciando Nebula".to_owned(),
+            detail: None,
+            done: false,
+            version: env!("CARGO_PKG_VERSION").to_owned(),
+        }
+    }
+}
+
 // ───────────────────────────── Ajustes e info ─────────────────────────────
 
 #[derive(Serialize)]
@@ -135,6 +171,11 @@ fn app_info(state: State<'_, AppState>) -> AppInfo {
         data_dir: state.paths.data_dir().display().to_string(),
         config_dir: state.paths.config_dir().display().to_string(),
     }
+}
+
+#[tauri::command]
+fn get_startup_progress(state: State<'_, AppState>) -> CmdResult<StartupProgress> {
+    Ok(state.startup()?.clone())
 }
 
 #[tauri::command]
@@ -1333,6 +1374,131 @@ async fn install_update(app: AppHandle) -> CmdResult<()> {
     }
 }
 
+// ───────────────────────────── Arranque con bienvenida ─────────────────────────────
+
+fn emit_startup(app: &AppHandle, progress: StartupProgress) {
+    if let Some(state) = app.try_state::<AppState>() {
+        if let Ok(mut current) = state.startup.lock() {
+            *current = progress.clone();
+        }
+    }
+    let _ = app.emit_to("splash", "startup-progress", progress);
+}
+
+/// Pasos reales del arranque. La ventana de bienvenida solo pinta lo que
+/// ocurre aquí; si algo tarda demasiado, se muestra la ventana principal
+/// igualmente para no dejar al usuario atrapado en la animación.
+async fn startup_steps(app: AppHandle) {
+    let started = std::time::Instant::now();
+    let mut progress = StartupProgress::new();
+    emit_startup(&app, progress.clone());
+    tokio::time::sleep(Duration::from_millis(280)).await;
+
+    // 1. Configuración y directorios.
+    progress.step = 1;
+    progress.percent = 14;
+    progress.label = "Cargando configuración".to_owned();
+    let data_dir = app
+        .try_state::<AppState>()
+        .map(|state| state.paths.data_dir().display().to_string());
+    progress.detail = Some(match data_dir {
+        Some(dir) => format!("Datos en {dir}"),
+        None => "Preparando los directorios de Nebula".to_owned(),
+    });
+    emit_startup(&app, progress.clone());
+    tokio::time::sleep(Duration::from_millis(220)).await;
+
+    // 2. Versión más reciente. El diálogo principal volverá a comprobarlo si
+    // esta consulta falla o tarda demasiado.
+    progress.step = 2;
+    progress.percent = 34;
+    progress.label = "Comprobando actualizaciones".to_owned();
+    progress.detail = Some("Buscando la versión más reciente…".to_owned());
+    emit_startup(&app, progress.clone());
+    let update_result = tokio::time::timeout(Duration::from_secs(4), async {
+        match app.updater() {
+            Ok(updater) => updater.check().await.map_err(|e| e.to_string()),
+            Err(e) => Err(e.to_string()),
+        }
+    })
+    .await;
+    progress.detail = Some(match update_result {
+        Ok(Ok(Some(update))) => format!("Nueva versión v{} disponible", update.version),
+        Ok(Ok(None)) => "Estás al día".to_owned(),
+        Ok(Err(e)) => format!("No se pudo comprobar: {e}"),
+        Err(_) => "La comprobación tardó demasiado; se reintentará al abrir".to_owned(),
+    });
+    emit_startup(&app, progress.clone());
+    tokio::time::sleep(Duration::from_millis(220)).await;
+
+    // 3. Java instalado.
+    progress.step = 3;
+    progress.percent = 58;
+    progress.label = "Buscando Java".to_owned();
+    progress.detail = Some("Revisando los runtimes instalados…".to_owned());
+    emit_startup(&app, progress.clone());
+    let paths = app.try_state::<AppState>().map(|state| state.paths.clone());
+    let java_found = match paths {
+        Some(paths) => match tokio::time::timeout(Duration::from_secs(2), java::detect(&paths)).await
+        {
+            Ok(list) => Some(list),
+            Err(_) => None,
+        },
+        None => None,
+    };
+    progress.detail = Some(match java_found {
+        Some(list) if list.is_empty() => {
+            "No se encontró Java; se puede descargar al jugar".to_owned()
+        }
+        Some(list) => format!("{} versión(es) de Java encontradas", list.len()),
+        None => "Detección de Java en segundo plano".to_owned(),
+    });
+    emit_startup(&app, progress.clone());
+    tokio::time::sleep(Duration::from_millis(220)).await;
+
+    // 4. Instancias existentes.
+    progress.step = 4;
+    progress.percent = 80;
+    progress.label = "Revisando instancias".to_owned();
+    progress.detail = Some("Leyendo tus instancias…".to_owned());
+    emit_startup(&app, progress.clone());
+    let instances = app
+        .try_state::<AppState>()
+        .and_then(|state| state.instances.list().ok());
+    progress.detail = Some(match instances {
+        Some(list) if list.instances.is_empty() => "No hay instancias todavía".to_owned(),
+        Some(list) => format!("{} instancia(s) disponible(s)", list.instances.len()),
+        None => "No se pudieron leer las instancias; se reintentará".to_owned(),
+    });
+    emit_startup(&app, progress.clone());
+    tokio::time::sleep(Duration::from_millis(220)).await;
+
+    // 5. Listo.
+    progress.step = 5;
+    progress.percent = 100;
+    progress.label = "Listo".to_owned();
+    progress.detail = Some("Abriendo Nebula Launcher".to_owned());
+    progress.done = true;
+    emit_startup(&app, progress);
+
+    // La animación se ve al menos 2,6 s aunque el equipo sea muy rápido.
+    let elapsed = started.elapsed();
+    if elapsed < Duration::from_millis(2600) {
+        tokio::time::sleep(Duration::from_millis(2600) - elapsed).await;
+    }
+    tokio::time::sleep(Duration::from_millis(350)).await;
+}
+
+fn show_main_and_close_splash(app: &AppHandle) {
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.set_focus();
+    }
+    if let Some(splash) = app.get_webview_window("splash") {
+        let _ = splash.close();
+    }
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -1374,6 +1540,7 @@ pub fn run() {
                 games: Mutex::new(HashMap::new()),
                 sign_in_cancel: Mutex::new(None),
                 sign_in_code: Mutex::new(None),
+                startup: Mutex::new(StartupProgress::new()),
             });
             // `bundle.icon` empieza por `icons/icon.png` (512×512), así que este
             // es el icono de Halloween que Tauri incrusta para la ventana. Si el
@@ -1389,10 +1556,24 @@ pub fn run() {
                     let _ = window.set_icon(icon);
                 }
             }
+
+            // La ventana principal nace oculta. Esta tarea hace el trabajo
+            // real, actualiza la bienvenida y, pase lo que pase, termina
+            // mostrando la ventana principal.
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let _ = tokio::time::timeout(
+                    Duration::from_secs(12),
+                    startup_steps(handle.clone()),
+                )
+                .await;
+                show_main_and_close_splash(&handle);
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             app_info,
+            get_startup_progress,
             get_settings,
             save_settings,
             get_account,

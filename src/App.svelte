@@ -6,12 +6,13 @@
   import Instances from "./pages/Instances.svelte";
   import Personalization from "./pages/Personalization.svelte";
   import SettingsPage from "./pages/Settings.svelte";
+  import About from "./pages/About.svelte";
   import SignInDialog from "./components/SignInDialog.svelte";
   import LocalSignInDialog from "./components/LocalSignInDialog.svelte";
   import UpdateDialog from "./components/UpdateDialog.svelte";
   import Icon, { type IconName } from "./components/Icon.svelte";
 
-  type Page = "home" | "instances" | "personalization" | "settings";
+  type Page = "home" | "instances" | "personalization" | "settings" | "about";
   type PersonalizationTab = "launcher" | "instances";
   let page = $state<Page>("home");
   let personalizationTab = $state<PersonalizationTab>("launcher");
@@ -26,6 +27,7 @@
     { id: "instances", label: "Instancias", icon: "library" },
     { id: "personalization", label: "Personalizar", icon: "palette" },
     { id: "settings", label: "Ajustes", icon: "settings" },
+    { id: "about", label: "Acerca de", icon: "info" },
   ];
 
   onMount(() => app.init());
@@ -67,12 +69,15 @@
     </nav>
     <div class="aside-footer">
       <div class="version muted" title="Versión">v{app.info?.version ?? ""}</div>
-      <div
+      <div class="copyright">© 2026 Nebula</div>
+      <button
         class="legal"
-        title="Nebula Launcher no está afiliado, asociado ni respaldado por Mojang Studios ni Microsoft. Minecraft es una marca de Mojang Studios."
+        onclick={() => goTo("about")}
+        title="Nebula Launcher no está afiliado, asociado ni respaldado por Mojang Studios ni Microsoft. Minecraft es una marca de Mojang Studios. Pulsa para ver el copyright completo."
       >
-        <span>No afiliado a Mojang</span>
-      </div>
+        <span>Minecraft © Mojang</span>
+        <span>No afiliado</span>
+      </button>
     </div>
   </aside>
 
@@ -95,8 +100,10 @@
             <Instances />
           {:else if page === "personalization"}
             <Personalization initialTab={personalizationTab} />
+          {:else if page === "settings"}
+            <SettingsPage gotoAbout={() => goTo("about")} />
           {:else}
-            <SettingsPage />
+            <About />
           {/if}
         </div>
       {/key}
@@ -138,7 +145,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 26px;
+    gap: 20px;
     padding: 22px 10px;
     background: radial-gradient(circle at top, rgb(167 139 250 / 0.14), transparent 60%), rgb(var(--surface) / var(--surface-alpha));
     border-right: 1px solid var(--border);
@@ -169,7 +176,7 @@
   nav {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     flex: 1;
     width: 100%;
   }
@@ -182,7 +189,7 @@
     border: none;
     cursor: pointer;
     width: 100%;
-    padding: 10px 6px;
+    padding: 9px 6px;
     border-radius: 12px;
     color: var(--muted);
     transition: background var(--ease), color var(--ease), transform var(--ease);
@@ -224,20 +231,46 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
+    width: 100%;
   }
   .version {
     font-size: 10px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
   }
-  .legal {
-    max-width: 70px;
+  .copyright {
+    max-width: 68px;
     text-align: center;
     font-size: 8px;
     line-height: 1.35;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    opacity: 0.6;
+    white-space: nowrap;
+  }
+  .legal {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 68px;
+    padding: 3px 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    font-size: 7px;
+    line-height: 1.4;
     color: var(--muted);
     opacity: 0.72;
+    transition: opacity var(--ease), color var(--ease);
+  }
+  .legal span {
+    white-space: nowrap;
+  }
+  .legal:hover {
+    opacity: 1;
+    color: var(--text);
   }
   main {
     overflow-y: auto;
