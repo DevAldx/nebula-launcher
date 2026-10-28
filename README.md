@@ -5,7 +5,7 @@ Launcher de Minecraft ligero para Linux y Windows. Rust + Tauri 2 + Svelte 5 + T
 ## Estructura
 
 ```
-crates/nebula-core/   Lógica pura (sin Tauri), 99 tests
+crates/nebula-core/   Lógica pura (sin Tauri), 100 tests
   config/             settings.json (validación, guardado atómico, backup si está corrupto)
   instances/          IDs NBL-XXXXXX, modelo, store en disco
   filesystem/         write_atomic multiplataforma, join_safe (anti path traversal)
@@ -164,12 +164,12 @@ carpeta de cada tarjeta abre la raíz de la instancia para copiarla.
 
 ## Cómo ejecutar el AppImage ya construido
 
-Descarga `Nebula.Launcher_0.1.11_amd64.AppImage` desde la página de releases:
-<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.1.11>
+Descarga `Nebula.Launcher_0.2.0_amd64.AppImage` desde la página de releases:
+<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.2.0>
 
 ```
-chmod +x "Nebula.Launcher_0.1.11_amd64.AppImage"
-./"Nebula.Launcher_0.1.11_amd64.AppImage"
+chmod +x "Nebula.Launcher_0.2.0_amd64.AppImage"
+./"Nebula.Launcher_0.2.0_amd64.AppImage"
 ```
 
 El AppImage no necesita instalación. Si quieres una entrada en el menú de
@@ -201,11 +201,11 @@ Nebula usa **`tauri-plugin-updater`** con actualizaciones firmadas (minisign):
 
 ### Cómo se numeran las versiones
 
-Nebula usa **MAYOR.MENOR.PARCHE** (`0.1.11`, `0.1.12`, `0.2.0`, `1.0.0`):
+Nebula usa **MAYOR.MENOR.PARCHE** (`0.2.0`, `0.2.1`, `0.3.0`, `1.0.0`):
 
-- **Parche** (`0.1.11` → `0.1.12`): arreglos, textos, iconos y cambios pequeños.
-- **Menor** (`0.1.12` → `0.2.0`): funciones nuevas o cambios relevantes.
-- **Mayor** (`0.2.0` → `1.0.0`): rediseños o cambios incompatibles.
+- **Parche** (`0.2.0` → `0.2.1`): arreglos, textos, iconos y cambios pequeños.
+- **Menor** (`0.2.1` → `0.3.0`): funciones nuevas o cambios relevantes.
+- **Mayor** (`0.3.0` → `1.0.0`): rediseños o cambios incompatibles.
 
 Los cambios muy pequeños se agrupan en un solo parche; no se publica una
 versión por cada commit. La guía completa está en `VERSIONADO.md`.

@@ -3,7 +3,7 @@
 Nebula usa el formato **MAYOR.MENOR.PARCHE**, también conocido como SemVer:
 
 ```
-0.1.11
+0.2.0
 │ │ └── parche: cambios pequeños
 │ └──── menor: cambios relevantes
 └────── mayor: cambios grandes o incompatibles
@@ -36,14 +36,14 @@ por separado.
 
 ## Ejemplos con la versión actual
 
-La versión publicada ahora es **0.1.11**:
+La versión publicada ahora es **0.2.0**:
 
 | Cambio | Nueva versión | Comando |
 |---|---|---|
-| Un texto, un icono o un arreglo pequeño | `0.1.12` | `./scripts/bump-version.sh` |
-| Otra corrección pequeña | `0.1.13` | `./scripts/bump-version.sh` |
-| Una función nueva o un cambio relevante | `0.2.0` | `./scripts/bump-version.sh minor` |
-| Un arreglo pequeño después de `0.2.0` | `0.2.1` | `./scripts/bump-version.sh` |
+| Un texto, un icono o un arreglo pequeño | `0.2.1` | `./scripts/bump-version.sh` |
+| Otra corrección pequeña | `0.2.2` | `./scripts/bump-version.sh` |
+| Una función nueva o un cambio relevante | `0.3.0` | `./scripts/bump-version.sh minor` |
+| Un arreglo pequeño después de `0.3.0` | `0.3.1` | `./scripts/bump-version.sh` |
 | Un rediseño o cambio grande | `1.0.0` | `./scripts/bump-version.sh major` |
 | Una función relevante dentro de la serie 2 | `2.0.0` → `2.1.0` | `./scripts/bump-version.sh minor` |
 | Fijar una versión exacta | `2.1.0` | `./scripts/bump-version.sh set 2.1.0` |
@@ -80,7 +80,7 @@ Actualiza:
 
 ## Reglas de publicación
 
-1. El tag del release debe ser `v` + la versión: `v0.1.12`.
+1. El tag del release debe ser `v` + la versión: `v0.2.1`.
 2. `latest.json` debe tener exactamente la misma versión.
 3. Los artefactos deben ser los firmados de esa versión.
 4. No se reutiliza un tag ni una versión ya publicada.

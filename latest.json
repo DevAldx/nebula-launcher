@@ -1,15 +1,15 @@
 {
-  "version": "0.1.11",
-  "notes": "Nebula Launcher 0.1.11\n\n- El inicio de sesión de Microsoft se muestra en una ventana aparte, con el código, copiar, abrir en el navegador y Cancelar. La interfaz principal ya no se cubre con un modal.\n- Cerrar la ventana o pulsar Cancelar detiene el flujo y devuelve la ventana principal a su estado normal.\n- Si la ventana dedicada no se puede abrir, se usa el diálogo interno de respaldo.\n- Windows: instalador NSIS x64 (Windows 10/11; Windows 8/8.1 no es compatible). SmartScreen puede avisar porque no hay firma Authenticode.\n- Linux: AppImage firmado con actualización automática.\n- La cuenta local y el modo demo siguen disponibles; la cuenta local solo funciona con online-mode=false.",
-  "pub_date": "2026-10-27T04:54:56Z",
+  "version": "0.2.0",
+  "notes": "Personaliza el icono, los colores y el fondo del launcher, con aviso legal de no afiliación a Mojang.",
+  "pub_date": "2026-10-28T03:21:58Z",
   "platforms": {
     "linux-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTWNYdmFXekVGNWordzQrMlp6ZVRGM3k4OHFuRHlJRmFKeHpsb3ZXeENaKzQ1VDF2SHkwVlBuVWx4b3gyaFV3Z1pnTisxWDNPTmd0Y2V3Y0loRWkrb1E0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMDc2MTMyCWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMS4xMV9hbWQ2NC5BcHBJbWFnZQl2ZXJzaW9uOjAuMS4xMQp6WWxuRURQdi9EMEVad0FWR000Mll5WUNWUHIwQ3JCQ0t3Y01KOXd4TVl2NU5oVDQzTnZMdXFLWkhoaytpY0wrck0wR05IZmRFWmREc3h1YnBBcVJCZz09Cg==",
-      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.1.11/Nebula.Launcher_0.1.11_amd64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTWUxNTRTcU5pK2ZvWmtkUnBpVnlLYkZ3ZXNwSkN1UEFud29jQlNaNVV5bWZHWXNqTm9WRndNa0MrdzJ5dHlLeWNTaE9vS1FYdytPTkRnb3Y1U1d0YWc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMTUyMTE2CWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMi4wX2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4yLjAKa0VxeVNVRTRFandYb3FRNzdGdnI4V1NUbkpNa1NYV2FPb2ZvRzBkbXN4a0lrdCszQTk1ajBQc0tpWHJKZjdsTElaK3FQUmhqYnpZN2t5WXRYOGZaQVE9PQo=",
+      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.2.0/Nebula.Launcher_0.2.0_amd64.AppImage"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTVVUbU1xU1hHdlpjN1VRTzRyRnFENVR0Yi94R29mdW5NeDJEZ1dtRDBHU1ROb0RkcnNOUG1hd0lycVhjM2hyU1lIKzdUM1d1U1ViUk80SU5va2dIRHd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMDc2NjMxCWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMS4xMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4xLjExCmdqb3BVSm5Ld1E5SHlqMHlYZ3pnMFIwalFpam9FZUlqNmJWK05UZ3I1cHBDaEtrODhtRlVxQVl5MmczVDBqazYzSUdaVi9UTklTWGx2bmdmNXRyOEJ3PT0K",
-      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.1.11/Nebula.Launcher_0.1.11_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTWVDbTVoS0V6MnN0OWs5S0RtTUdMTEtHZ1V3VGU3am9GQlF6ZWlqM3Q2SDZjdm80SzhMdERQelNNQXVTNXo2eHlRMG5VRzJGMzM5bzdIT3RaUVlpNWdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMTU3NTEyCWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIuMAp4amNrUndNREQ2ZkhESXQzMDRlTXFRRG81eDZXZStZYm9YUzh1d0g0dG5KS1l0K0tncTN3ODNjVTBjWXMvZ0VUbHFzUlBKMkoyNE95REdEcHRubVZEdz09Cg==",
+      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.2.0/Nebula.Launcher_0.2.0_x64-setup.exe"
     }
   }
 }
