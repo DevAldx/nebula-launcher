@@ -100,10 +100,13 @@ src-tauri/tauri.windows.conf.json.
 
 También se puede compilar Windows desde Linux con cargo-xwin y NSIS 3.11;
 el comando exacto está en INSTRUCCIONES_WINDOWS.txt, sección 2b. El
-instalador 0.3.0 se genera así. La prueba de interfaz se hará en GitHub
-Actions (Windows Server 2025): instalación, arranque, splash, inicio de sesión,
-personalización y aviso legal. La prueba de 0.2.0 ya cubrió icono, fondo, tema
-y persistencia. Falta la prueba en un Windows 10/11 de escritorio.
+instalador 0.3.0 se generó así. La prueba se hizo en GitHub Actions (Windows
+Server 2025): SHA-256 correcto, instalación silenciosa código 0,
+FileVersion/ProductVersion 0.3.0, ventana principal y app viva; la captura
+muestra V0.3.0, Acerca de y el pie legal. El árbol UIA no encontró el botón de
+inicio de sesión, así que esa parte no se revalidó en 0.3.0. La prueba de 0.2.0
+ya cubrió icono, fondo, tema, persistencia, inicio de sesión y personalización.
+Falta la prueba en un Windows 10/11 de escritorio.
 
 
 ----------------------------------------

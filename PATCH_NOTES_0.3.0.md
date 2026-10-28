@@ -58,9 +58,16 @@ Fecha: 2026-10-27
 - Página «Acerca de» y pie de la barra lateral revisados visualmente con X11.
 - AppImage 0.3.0 probado con XDG aislados: splash visible a los 1,5 s,
   ventana principal con `V0.3.0`, «Acerca de» y pie lateral correctos.
-- Instalador Windows 0.3.0 compilado con cargo-xwin + NSIS 3.11 y firmado.
-  La prueba de instalación y arranque se ejecuta en GitHub Actions
-  (`Windows installer test`) después de publicar la release.
+- Instalador Windows 0.3.0 probado en GitHub Actions (Windows Server 2025,
+  WebView2 155.0.4283.62): SHA-256 correcto, instalación silenciosa con código
+  0, `FileVersion`/`ProductVersion` 0.3.0, ventana principal encontrada y app
+  viva; la captura muestra `V0.3.0`, «Acerca de» y el pie legal. El árbol UIA
+  se capturó con solo 2 elementos y no encontró el botón de inicio de sesión,
+  así que ese flujo no se revalidó en 0.3.0.
+- Actualización real 0.2.0 → 0.3.0 con XDG aislados: el diálogo mostró
+  0.2.0 → 0.3.0, la descarga (109,2 MB) terminó, el AppImage se reemplazó por
+  el SHA-256 de 0.3.0 y la app se reinició con el splash y la ventana principal
+  `V0.3.0`.
 
 ## Limitaciones conocidas
 
@@ -71,5 +78,8 @@ Fecha: 2026-10-27
 - La comprobación de actualizaciones del splash y la del diálogo principal
   pueden duplicarse. El diálogo principal sigue siendo el respaldo.
 - La prueba de Windows es en Windows Server 2025, no en un Windows 10/11 de
-  escritorio. No se probaron en Windows el flujo completo de juego ni la
-  creación de una instancia.
+  escritorio. En 0.3.0 se verificaron instalación, arranque y ventana
+  principal; el árbol UIA no encontró el botón de inicio de sesión, así que el
+  inicio de sesión, la personalización y el flujo completo de juego no se
+  revalidaron en Windows. La prueba de 0.2.0 sí cubrió inicio de sesión y
+  personalización.

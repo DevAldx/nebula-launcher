@@ -249,11 +249,14 @@ El instalador se genera en `src-tauri/target/release/bundle/nsis/`. La versión
 ventana «Nebula Launcher», botón Microsoft, ventana «Nebula — Iniciar sesión» y
 Cancelar; icono PNG, fondo GIF, tema púrpura, acento `#22c55e`, desenfoque de
 15 px y oscurecimiento del 60 % guardados y persistentes tras reiniciar; aviso
-legal visible. La prueba de interfaz de 0.3.0 se ejecutará en el mismo runner
-después de publicar la release. **Falta probarlo en un Windows 10/11 de
-escritorio** y el flujo completo de juego. Windows 8/8.1 no es viable: Tauri 2
-y el WebView2 actual ya no lo soportan. La guía está en
-`INSTRUCCIONES_WINDOWS.txt`.
+legal visible. La versión 0.3.0 se probó en el mismo runner: SHA-256 correcto,
+instalación silenciosa con código 0, `FileVersion`/`ProductVersion` 0.3.0,
+ventana principal y app viva; la captura muestra `V0.3.0`, «Acerca de» y el pie
+legal. El árbol UIA se capturó con solo 2 elementos y no encontró el botón de
+inicio de sesión, así que el inicio de sesión no se revalidó en 0.3.0. **Falta
+probarlo en un Windows 10/11 de escritorio** y el flujo completo de juego.
+Windows 8/8.1 no es viable: Tauri 2 y el WebView2 actual ya no lo soportan. La
+guía está en `INSTRUCCIONES_WINDOWS.txt`.
 
 **Wine/Bottles no es compatible.** El instalador NSIS intenta descargar e
 instalar WebView2 y falla (código 2) porque Wine no lo soporta; aunque se
