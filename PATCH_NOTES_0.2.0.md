@@ -58,7 +58,14 @@ Fecha: 2026-10-27
 - El AppImage 0.2.0 de release se probó también con XDG aislados: arranque,
   versión 0.2.0, página Personalizar, icono PNG, fondo GIF animado, guardado
   del tema púrpura, persistencia tras reiniciar y aviso legal visible.
-- Prueba del instalador Windows en GitHub Actions: pendiente de ejecutar.
+- Prueba del instalador Windows en GitHub Actions (Windows Server 2025,
+  WebView2 155.0.4283.62, ejecución 40628354950): SHA-256 correcto,
+  instalación silenciosa con código 0, versión 0.2.0, ventana «Nebula
+  Launcher», botón Microsoft, ventana «Nebula — Iniciar sesión» y Cancelar.
+  La personalización se probó con UI Automation: icono PNG, fondo GIF, tema
+  púrpura, acento `#22c55e`, desenfoque de 15 px y oscurecimiento del 60 %;
+  los archivos quedaron en `%APPDATA%\nebula\nebula\config` y persistieron
+  tras reiniciar. El aviso legal también se comprobó en Personalizar.
 
 ## Limitaciones conocidas
 

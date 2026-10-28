@@ -70,7 +70,7 @@ npm run tauri build            # AppImage (Linux) o NSIS (Windows)
 | **Importar por código**: busca `NBL-XXXXXX`, muestra una vista previa (nombre, descripción, versión, loader, nº de archivos, si tu Java cumple el mínimo que pide) y, si confirmas, crea la instancia con su **nombre** y descarga mods/resourcepacks/shaders/config **y el fondo remoto** verificando SHA-1 y tamaño, sin repetir lo que ya esté completo, con progreso real | Real |
 | **Exportar**: genera una plantilla de manifiesto con los datos de tu instancia y la lista de tus mods activos, guardada en su propia carpeta | Real — pero sin URLs de descarga, porque no hay dónde subir los archivos (ver abajo) |
 | **Windows**: rutas, `java.exe`, detección en Program Files, classpath con `;`, configuración NSIS, iconos `.ico` e instalador compilado desde Linux con `cargo-xwin` | Instalador probado en Windows Server 2025 (GitHub Actions); **falta un Windows 10/11 de escritorio y el flujo completo de juego**. Windows 8/8.1 no es compatible con Tauri 2/WebView2 moderno |
-| **Personalización del launcher**: icono propio, tema, color de acento, transparencia, animaciones y fondo general con PNG/JPG/WEBP/GIF animados | Real |
+| **Personalización del launcher**: icono propio, tema, color de acento, transparencia, animaciones y fondo general con PNG/JPG/WEBP/GIF animados | Real en Linux; icono, fondo, tema y efectos probados en Windows Server 2025 |
 | Icono de Halloween en la app, ventana e instaladores | Real (se puede cambiar el de la ventana y la barra lateral desde Personalizar) |
 | Cancelar una importación a mitad | No incluido todavía — sí hereda los reintentos y la verificación del resto del sistema de descargas |
 
@@ -235,11 +235,14 @@ y hay dos formas de compilar el instalador NSIS:
    `TAURI_SIGNING_PRIVATE_KEY` y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
 El instalador se genera en `src-tauri/target/release/bundle/nsis/`. La versión
-0.1.11 se compiló desde Linux con `cargo-xwin` y NSIS. Su instalación y la
-ventana dedicada de inicio de sesión se probaron en un runner `windows-latest`
-de GitHub Actions (Windows Server 2025): instalación correcta, ventana
-«Nebula Launcher», botón Microsoft, ventana «Nebula — Iniciar sesión» y
-Cancelar. **Falta probarlo en un Windows 10/11 de escritorio** y el flujo
+0.2.0 se compiló desde Linux con `cargo-xwin` y NSIS. Su instalación, la
+ventana dedicada de inicio de sesión y la personalización se probaron en un
+runner `windows-latest` de GitHub Actions (Windows Server 2025, WebView2
+155.0.4283.62): SHA-256 correcto, instalación con código 0, ventana «Nebula
+Launcher», botón Microsoft, ventana «Nebula — Iniciar sesión» y Cancelar;
+icono PNG, fondo GIF, tema púrpura, acento `#22c55e`, desenfoque de 15 px y
+oscurecimiento del 60 % guardados y persistentes tras reiniciar; aviso legal
+visible. **Falta probarlo en un Windows 10/11 de escritorio** y el flujo
 completo de juego. Windows 8/8.1 no es viable: Tauri 2 y el WebView2 actual ya
 no lo soportan. La guía está en `INSTRUCCIONES_WINDOWS.txt`.
 
