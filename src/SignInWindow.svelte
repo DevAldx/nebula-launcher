@@ -9,6 +9,7 @@
   let error = $state("");
   let copied = $state(false);
   let loading = $state(true);
+  let icon = $state<string | null>(null);
   let unlisten: UnlistenFn[] = [];
   let copyTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -49,11 +50,20 @@
 
     void (async () => {
       try {
-        const [current] = await Promise.all([
+        const [current, , customIcon] = await Promise.all([
           api.getSignInCode(),
           api.getSettings().then((settings) => applyUi(settings.ui)).catch(() => {}),
+          api
+            .getLauncherIcon()
+            .then((value) =>
+              value ? `data:${value.mime};base64,${value.data_base64}` : null,
+            )
+            .catch(() => null),
         ]);
-        if (!disposed) code = current;
+        if (!disposed) {
+          code = current;
+          icon = customIcon;
+        }
       } catch (e) {
         if (!disposed) error = e instanceof Error ? e.message : String(e);
       } finally {
@@ -90,7 +100,7 @@
 
 <div class="signin-window">
   <header class="brand">
-    <img class="brand-mark" src="/nebula-icon.png" alt="" />
+    <img class="brand-mark" src={icon ?? "/nebula-icon.png"} alt="" />
     <div>
       <p class="eyebrow">Nebula Launcher</p>
       <h1>Iniciar sesión</h1>
@@ -138,6 +148,11 @@
       <button type="button" class="btn primary" onclick={closeWindow}>Cerrar</button>
     </div>
   {/if}
+
+  <p class="legal">
+    Nebula Launcher no está afiliado a Mojang Studios ni Microsoft. Minecraft es una marca de
+    Mojang Studios.
+  </p>
 </div>
 
 <style>
@@ -226,6 +241,14 @@
   }
   .success {
     color: var(--success);
+  }
+  .legal {
+    margin-top: auto;
+    padding-top: 10px;
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--muted);
+    opacity: 0.72;
   }
   @keyframes pulse {
     0% { box-shadow: 0 0 0 0 var(--accent-glow); }

@@ -22,12 +22,33 @@ pub enum Theme {
     Purple,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BackgroundFit {
+    Cover,
+    Contain,
+    Tile,
+}
+
+impl Default for BackgroundFit {
+    fn default() -> Self {
+        Self::Cover
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct UiSettings {
     pub theme: Theme,
     pub animations: bool,
     pub transparency: bool,
+    /// Color de acento `#RRGGBB`; `None` usa el color del tema.
+    pub accent: Option<String>,
+    pub background_fit: BackgroundFit,
+    /// Desenfoque del fondo del launcher, en píxeles (0-40).
+    pub background_blur: u8,
+    /// Oscurecimiento del fondo del launcher, en porcentaje (0-90).
+    pub background_dim: u8,
 }
 
 impl Default for UiSettings {
@@ -36,7 +57,33 @@ impl Default for UiSettings {
             theme: Theme::Dark,
             animations: true,
             transparency: true,
+            accent: None,
+            background_fit: BackgroundFit::Cover,
+            background_blur: 0,
+            background_dim: 40,
         }
+    }
+}
+
+impl UiSettings {
+    pub fn validate(&self) -> Result<()> {
+        if let Some(accent) = &self.accent {
+            let valid = accent.len() == 7
+                && accent.starts_with('#')
+                && accent[1..].chars().all(|c| c.is_ascii_hexdigit());
+            if !valid {
+                return Err(CoreError::invalid(
+                    "el color de acento debe tener el formato #RRGGBB",
+                ));
+            }
+        }
+        if self.background_blur > 40 {
+            return Err(CoreError::invalid("el desenfoque del fondo debe estar entre 0 y 40"));
+        }
+        if self.background_dim > 90 {
+            return Err(CoreError::invalid("el oscurecimiento del fondo debe estar entre 0 y 90"));
+        }
+        Ok(())
     }
 }
 
@@ -153,6 +200,7 @@ pub fn validate_jvm_args(args: &[String]) -> Result<()> {
 
 impl Settings {
     pub fn validate(&self) -> Result<()> {
+        self.ui.validate()?;
         let m = &self.minecraft;
         validate_memory(m.min_ram_mb, m.max_ram_mb)?;
         validate_jvm_args(&m.jvm_args)?;
@@ -217,9 +265,48 @@ mod tests {
         let path = tmp.path().join("settings.json");
         let mut s = Settings::default();
         s.ui.theme = Theme::Purple;
+        s.ui.accent = Some("#ff00aa".into());
+        s.ui.background_fit = BackgroundFit::Tile;
+        s.ui.background_blur = 12;
+        s.ui.background_dim = 60;
         s.minecraft.max_ram_mb = 4096;
         assert!(s.save(&path).is_ok());
         assert_eq!(Settings::load(&path).unwrap_or_default(), s);
+    }
+
+    #[test]
+    fn ui_accent_and_effects_are_validated() {
+        let mut s = Settings::default();
+        s.ui.accent = Some("#8b5cf6".into());
+        assert!(s.validate().is_ok());
+
+        s.ui.accent = Some("8b5cf6".into());
+        assert!(s.validate().is_err());
+        s.ui.accent = Some("#GGGGGG".into());
+        assert!(s.validate().is_err());
+
+        s.ui.accent = None;
+        s.ui.background_blur = 41;
+        assert!(s.validate().is_err());
+        s.ui.background_blur = 0;
+        s.ui.background_dim = 91;
+        assert!(s.validate().is_err());
+    }
+
+    #[test]
+    fn old_settings_without_new_ui_fields_get_defaults() {
+        let tmp = TempDir::new();
+        let path = tmp.path().join("settings.json");
+        fs::write(
+            &path,
+            br#"{"schema_version":1,"ui":{"theme":"dark","animations":true,"transparency":true}}"#,
+        )
+        .unwrap_or_default();
+        let s = Settings::load(&path).unwrap_or_default();
+        assert_eq!(s.ui.accent, None);
+        assert_eq!(s.ui.background_fit, BackgroundFit::Cover);
+        assert_eq!(s.ui.background_blur, 0);
+        assert_eq!(s.ui.background_dim, 40);
     }
 
     #[test]

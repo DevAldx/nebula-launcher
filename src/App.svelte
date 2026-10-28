@@ -12,7 +12,14 @@
   import Icon, { type IconName } from "./components/Icon.svelte";
 
   type Page = "home" | "instances" | "personalization" | "settings";
+  type PersonalizationTab = "launcher" | "instances";
   let page = $state<Page>("home");
+  let personalizationTab = $state<PersonalizationTab>("launcher");
+
+  function goTo(next: Page) {
+    if (next === "personalization") personalizationTab = "launcher";
+    page = next;
+  }
 
   const nav: { id: Page; label: string; icon: IconName }[] = [
     { id: "home", label: "Inicio", icon: "home" },
@@ -26,17 +33,33 @@
     if (app.settings) applyUi(app.settings.ui);
   });
   const fadeMs = $derived(app.settings?.ui.animations === false ? 0 : 120);
+  const ui = $derived(app.settings?.ui);
 </script>
+
+{#if app.launcherBackground && ui}
+  <div
+    class="launcher-bg"
+    style:background-image={`url("${app.launcherBackground}")`}
+    style:background-size={ui.background_fit === "cover"
+      ? "cover"
+      : ui.background_fit === "contain"
+        ? "contain"
+        : "auto"}
+    style:background-repeat={ui.background_fit === "tile" ? "repeat" : "no-repeat"}
+    style:filter={ui.background_blur > 0 ? `blur(${ui.background_blur}px)` : undefined}
+  ></div>
+  <div class="launcher-bg-shade" style:opacity={ui.background_dim / 100}></div>
+{/if}
 
 <div class="shell">
   <aside>
     <div class="brand" title="Nebula Launcher">
-      <img class="brand-mark" src="/nebula-icon.png" alt="" />
+      <img class="brand-mark" src={app.launcherIcon ?? "/nebula-icon.png"} alt="" />
       <span class="brand-text">Nebula</span>
     </div>
     <nav>
       {#each nav as item}
-        <button class:active={page === item.id} title={item.label} onclick={() => (page = item.id)}>
+        <button class:active={page === item.id} title={item.label} onclick={() => goTo(item.id)}>
           <span class="icon"><Icon name={item.icon} size={21} /></span>
           <span class="label">{item.label}</span>
         </button>
@@ -44,6 +67,12 @@
     </nav>
     <div class="aside-footer">
       <div class="version muted" title="Versión">v{app.info?.version ?? ""}</div>
+      <div
+        class="legal"
+        title="Nebula Launcher no está afiliado, asociado ni respaldado por Mojang Studios ni Microsoft. Minecraft es una marca de Mojang Studios."
+      >
+        <span>No afiliado a Mojang</span>
+      </div>
     </div>
   </aside>
 
@@ -56,11 +85,16 @@
       {#key page}
         <div class="page" in:fade={{ duration: fadeMs }}>
           {#if page === "home"}
-            <Home goto={(p) => (page = p)} />
+            <Home
+              goto={(p, tab) => {
+                if (p === "personalization" && tab) personalizationTab = tab;
+                page = p;
+              }}
+            />
           {:else if page === "instances"}
             <Instances />
           {:else if page === "personalization"}
-            <Personalization />
+            <Personalization initialTab={personalizationTab} />
           {:else}
             <SettingsPage />
           {/if}
@@ -75,7 +109,26 @@
 <UpdateDialog />
 
 <style>
+  .launcher-bg {
+    position: fixed;
+    inset: -64px;
+    z-index: 0;
+    background-position: center;
+    background-color: var(--background);
+    pointer-events: none;
+    transform: scale(1.04);
+    transform-origin: center;
+  }
+  .launcher-bg-shade {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: #05040c;
+    pointer-events: none;
+  }
   .shell {
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: 88px 1fr;
     height: 100%;
@@ -177,6 +230,14 @@
     font-size: 10px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
+  }
+  .legal {
+    max-width: 70px;
+    text-align: center;
+    font-size: 8px;
+    line-height: 1.35;
+    color: var(--muted);
+    opacity: 0.72;
   }
   main {
     overflow-y: auto;

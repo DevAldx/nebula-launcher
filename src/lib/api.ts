@@ -57,6 +57,14 @@ export const api = {
   setInstanceBackground: (instanceId: string, mime: string, dataBase64: string) =>
     call<void>("set_instance_background", { instanceId, mime, dataBase64 }),
   clearInstanceBackground: (instanceId: string) => call<void>("clear_instance_background", { instanceId }),
+  getLauncherBackground: () => call<BackgroundView | null>("get_launcher_background"),
+  setLauncherBackground: (mime: string, dataBase64: string) =>
+    call<void>("set_launcher_background", { mime, dataBase64 }),
+  clearLauncherBackground: () => call<void>("clear_launcher_background"),
+  getLauncherIcon: () => call<BackgroundView | null>("get_launcher_icon"),
+  setLauncherIcon: (mime: string, dataBase64: string) =>
+    call<void>("set_launcher_icon", { mime, dataBase64 }),
+  clearLauncherIcon: () => call<void>("clear_launcher_icon"),
   fetchShareManifest: (code: string) => call<InstanceManifest>("fetch_share_manifest", { code }),
   importFromCode: (code: string) => call<void>("import_from_code", { code }),
   exportManifestTemplate: (instanceId: string) => call<string>("export_manifest_template", { instanceId }),

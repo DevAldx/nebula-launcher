@@ -1,5 +1,6 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { api } from "./api";
+import { accentColors } from "./color";
 import type {
   Account, AppInfo, AuthStateEvent, GameState, GameStateEvent, ImportStateEvent, Instance,
   InstanceList, JavaRuntime, LogEvent, ProgressEvent, Settings,
@@ -49,6 +50,10 @@ class AppState {
   backgrounds = $state<Record<string, string | null>>({});
   private backgroundsLoading = new Set<string>();
 
+  /** Fondo e icono propios del launcher (no de una instancia). */
+  launcherBackground = $state<string | null>(null);
+  launcherIcon = $state<string | null>(null);
+
   async ensureBackground(instanceId: string) {
     if (instanceId in this.backgrounds || this.backgroundsLoading.has(instanceId)) return;
     this.backgroundsLoading.add(instanceId);
@@ -64,6 +69,41 @@ class AppState {
 
   invalidateBackground(instanceId: string) {
     delete this.backgrounds[instanceId];
+  }
+
+  async loadLauncherAppearance() {
+    try {
+      const [background, icon] = await Promise.all([
+        api.getLauncherBackground(),
+        api.getLauncherIcon(),
+      ]);
+      this.launcherBackground = background
+        ? `data:${background.mime};base64,${background.data_base64}`
+        : null;
+      this.launcherIcon = icon ? `data:${icon.mime};base64,${icon.data_base64}` : null;
+    } catch (e) {
+      console.error("no se pudo cargar la apariencia del launcher", e);
+    }
+  }
+
+  async setLauncherBackground(mime: string, dataBase64: string) {
+    await api.setLauncherBackground(mime, dataBase64);
+    this.launcherBackground = `data:${mime};base64,${dataBase64}`;
+  }
+
+  async clearLauncherBackground() {
+    await api.clearLauncherBackground();
+    this.launcherBackground = null;
+  }
+
+  async setLauncherIcon(dataBase64: string) {
+    await api.setLauncherIcon("image/png", dataBase64);
+    this.launcherIcon = `data:image/png;base64,${dataBase64}`;
+  }
+
+  async clearLauncherIcon() {
+    await api.clearLauncherIcon();
+    this.launcherIcon = null;
   }
 
   private unlisten: UnlistenFn[] = [];
@@ -95,6 +135,7 @@ class AppState {
       const running = await api.gameStates();
       for (const [id, s] of Object.entries(running)) this.games[id] = s as GameState;
       this.ready = true;
+      void this.loadLauncherAppearance();
       void this.detectJava();
     } catch (e) {
       this.fatal = e instanceof Error ? e.message : String(e);
@@ -315,10 +356,22 @@ class AppState {
 
 export const app = new AppState();
 
-/** Aplica tema y preferencias visuales al documento. */
+/** Aplica tema, color de acento y preferencias visuales al documento. */
 export function applyUi(ui: Settings["ui"]) {
   const root = document.documentElement;
   root.dataset.theme = ui.theme;
   root.dataset.animations = String(ui.animations);
   root.dataset.transparency = String(ui.transparency);
+
+  const accent = accentColors(ui.accent);
+  if (accent) {
+    root.style.setProperty("--accent", accent.accent);
+    root.style.setProperty("--accent-hover", accent.hover);
+    root.style.setProperty("--accent-glow", accent.glow);
+  } else {
+    // Deja que el tema vuelva a mandar (los valores viven en app.css).
+    root.style.removeProperty("--accent");
+    root.style.removeProperty("--accent-hover");
+    root.style.removeProperty("--accent-glow");
+  }
 }

@@ -98,17 +98,11 @@
 <br />
 
 <section class="card">
-  <h2>Interfaz</h2>
-  <label class="field">
-    <span>Tema</span>
-    <select bind:value={draft.ui.theme}>
-      <option value="dark">Oscuro</option>
-      <option value="black">Negro</option>
-      <option value="purple">Púrpura</option>
-    </select>
-  </label>
-  <label class="field check"><input type="checkbox" bind:checked={draft.ui.animations} /><span>Animaciones</span></label>
-  <label class="field check"><input type="checkbox" bind:checked={draft.ui.transparency} /><span>Transparencia de paneles</span></label>
+  <h2>Apariencia</h2>
+  <p class="hint">
+    El tema, el color de acento, el icono y el fondo del launcher se configuran en
+    <strong>Personalizar</strong>.
+  </p>
 </section>
 <br />
 
@@ -245,6 +239,20 @@
 </section>
 <br />
 
+<section class="card legal-card">
+  <h2>Acerca de Nebula Launcher</h2>
+  <p>
+    Nebula Launcher es un proyecto independiente. No está afiliado, asociado, autorizado,
+    respaldado ni patrocinado por Mojang Studios, Microsoft Corporation ni sus filiales.
+  </p>
+  <p>
+    Minecraft es una marca registrada de Mojang Studios. Nebula no incluye ni distribuye
+    Minecraft: descarga los archivos oficiales desde los servidores de Mojang con tu propia cuenta.
+  </p>
+  <p class="hint">© 2026 Nebula Launcher · Código bajo licencia MIT.</p>
+</section>
+<br />
+
 {#if error}<p class="error">{error}</p>{/if}
 <button class="btn primary" onclick={save}>Guardar</button>
 {#if saved}<span class="hint">&nbsp; Guardado.</span>{/if}
@@ -285,5 +293,12 @@
     color: var(--accent);
     background: rgb(167 139 250 / 0.12);
     border: 1px solid var(--border-strong);
+  }
+  .legal-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
   }
 </style>

@@ -113,6 +113,7 @@ impl From<CoreError> for CommandError {
 // Límites de IPC: se comprueban ANTES de decodificar base64 para que una
 // llamada enorme no duplique memoria (cadena + bytes) ni agote el proceso.
 const MAX_BACKGROUND_B64: usize = 21 * 1024 * 1024; // 15 MB de imagen + margen
+const MAX_ICON_B64: usize = 6 * 1024 * 1024; // 4 MB de PNG + margen
 const MAX_MOD_B64: usize = 268 * 1024 * 1024; // 200 MB por mod + margen
 const MAX_MOD_FILES: usize = 256;
 
@@ -895,6 +896,104 @@ fn clear_instance_background(state: State<'_, AppState>, instance_id: String) ->
     Ok(background::clear(&state.paths.instance_dir(&id))?)
 }
 
+// ───────────────────────────── Fondo e icono del launcher ─────────────────────────────
+
+#[tauri::command]
+fn get_launcher_background(state: State<'_, AppState>) -> CmdResult<Option<BackgroundView>> {
+    Ok(background::load_launcher_background(state.paths.config_dir())?.map(|(mime, bytes)| {
+        BackgroundView {
+            mime,
+            data_base64: BASE64.encode(bytes),
+        }
+    }))
+}
+
+#[tauri::command]
+fn set_launcher_background(
+    state: State<'_, AppState>,
+    mime: String,
+    data_base64: String,
+) -> CmdResult<()> {
+    if data_base64.len() > MAX_BACKGROUND_B64 {
+        return Err(CommandError::new(
+            "la imagen supera el tamaño máximo admitido (15 MB)",
+        ));
+    }
+    let bytes = BASE64
+        .decode(data_base64.as_bytes())
+        .map_err(|e| CommandError::new(format!("imagen no válida: {e}")))?;
+    Ok(background::save_launcher_background(
+        state.paths.config_dir(),
+        &mime,
+        &bytes,
+    )?)
+}
+
+#[tauri::command]
+fn clear_launcher_background(state: State<'_, AppState>) -> CmdResult<()> {
+    Ok(background::clear_launcher_background(state.paths.config_dir())?)
+}
+
+#[tauri::command]
+fn get_launcher_icon(state: State<'_, AppState>) -> CmdResult<Option<BackgroundView>> {
+    Ok(background::load_launcher_icon(state.paths.config_dir())?.map(|(mime, bytes)| {
+        BackgroundView {
+            mime,
+            data_base64: BASE64.encode(bytes),
+        }
+    }))
+}
+
+#[tauri::command]
+fn set_launcher_icon(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    mime: String,
+    data_base64: String,
+) -> CmdResult<()> {
+    if mime != "image/png" {
+        return Err(CommandError::new("el icono debe ser un PNG cuadrado"));
+    }
+    if data_base64.len() > MAX_ICON_B64 {
+        return Err(CommandError::new(
+            "el icono supera el tamaño máximo admitido (4 MB)",
+        ));
+    }
+    let bytes = BASE64
+        .decode(data_base64.as_bytes())
+        .map_err(|e| CommandError::new(format!("icono no válido: {e}")))?;
+    let (width, height) = background::png_dimensions(&bytes)
+        .ok_or_else(|| CommandError::new("icono no válido: no es un PNG"))?;
+    if width != height {
+        return Err(CommandError::new("el icono debe ser un PNG cuadrado"));
+    }
+    if width > 2048 || height > 2048 {
+        return Err(CommandError::new(
+            "el icono no puede superar 2048×2048 píxeles",
+        ));
+    }
+    let icon = tauri::image::Image::from_bytes(&bytes)
+        .map_err(|e| CommandError::new(format!("icono no válido: {e}")))?;
+    background::save_launcher_icon(state.paths.config_dir(), &bytes)?;
+    if let Some(window) = app.get_webview_window("main") {
+        window
+            .set_icon(icon)
+            .map_err(|e| CommandError::new(format!("no se pudo aplicar el icono: {e}")))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn clear_launcher_icon(app: AppHandle, state: State<'_, AppState>) -> CmdResult<()> {
+    background::clear_launcher_icon(state.paths.config_dir())?;
+    if let Some(window) = app.get_webview_window("main") {
+        if let Some(icon) = app.default_window_icon().cloned() {
+            let _ = window.set_icon(icon);
+        }
+    }
+    Ok(())
+}
+
 // ───────────────────────────── Jugar ─────────────────────────────
 
 #[derive(Clone, Serialize)]
@@ -1264,6 +1363,7 @@ pub fn run() {
                 None => boot,
             };
             paths.ensure_layout()?;
+            let config_dir = paths.config_dir().to_path_buf();
             app.manage(AppState {
                 instances: InstanceStore::new(paths.clone()),
                 installer: Installer::new(paths.clone())?,
@@ -1276,9 +1376,16 @@ pub fn run() {
                 sign_in_code: Mutex::new(None),
             });
             // `bundle.icon` empieza por `icons/icon.png` (512×512), así que este
-            // es el icono de Halloween que Tauri incrusta para la ventana.
+            // es el icono de Halloween que Tauri incrusta para la ventana. Si el
+            // usuario guardó uno propio, se aplica al arrancar.
             if let Some(window) = app.get_webview_window("main") {
-                if let Some(icon) = app.default_window_icon().cloned() {
+                let custom = background::load_launcher_icon(&config_dir)
+                    .ok()
+                    .flatten()
+                    .and_then(|(_, bytes)| tauri::image::Image::from_bytes(&bytes).ok());
+                if let Some(icon) = custom {
+                    let _ = window.set_icon(icon);
+                } else if let Some(icon) = app.default_window_icon().cloned() {
                     let _ = window.set_icon(icon);
                 }
             }
@@ -1315,6 +1422,12 @@ pub fn run() {
             get_instance_background,
             set_instance_background,
             clear_instance_background,
+            get_launcher_background,
+            set_launcher_background,
+            clear_launcher_background,
+            get_launcher_icon,
+            set_launcher_icon,
+            clear_launcher_icon,
             fetch_share_manifest,
             import_from_code,
             export_manifest_template,

@@ -1,6 +1,7 @@
 // Espejo de los tipos serializados por nebula-core.
 
 export type Theme = "dark" | "black" | "purple";
+export type BackgroundFit = "cover" | "contain" | "tile";
 export type Loader = "vanilla" | "fabric";
 
 export interface Memory {
@@ -20,7 +21,15 @@ export interface Settings {
     height: number;
     fullscreen: boolean;
   };
-  ui: { theme: Theme; animations: boolean; transparency: boolean };
+  ui: {
+    theme: Theme;
+    animations: boolean;
+    transparency: boolean;
+    accent: string | null;
+    background_fit: BackgroundFit;
+    background_blur: number;
+    background_dim: number;
+  };
   account: { microsoft_client_id: string | null };
   updates: { manifest_url: string | null };
   sharing: { manifest_base_url: string | null };

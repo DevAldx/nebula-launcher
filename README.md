@@ -5,7 +5,7 @@ Launcher de Minecraft ligero para Linux y Windows. Rust + Tauri 2 + Svelte 5 + T
 ## Estructura
 
 ```
-crates/nebula-core/   Lógica pura (sin Tauri), 88 tests
+crates/nebula-core/   Lógica pura (sin Tauri), 99 tests
   config/             settings.json (validación, guardado atómico, backup si está corrupto)
   instances/          IDs NBL-XXXXXX, modelo, store en disco
   filesystem/         write_atomic multiplataforma, join_safe (anti path traversal)
@@ -16,7 +16,7 @@ crates/nebula-core/   Lógica pura (sin Tauri), 88 tests
   auth/               Microsoft (Azure o flujo heredado) → Xbox Live → XSTS → Minecraft, keyring; cuenta local sin Azure
   mods.rs             Mods locales: listar, activar/desactivar, borrar, importar
   updater.rs          Comparación de versiones + lectura de un manifiesto JSON (sin feed propio)
-  background.rs       Imagen de fondo por instancia (PNG/JPG/WEBP), con comprobación de contenido
+  background.rs       Fondos de instancia y del launcher, icono propio (PNG/JPG/WEBP/GIF), comprobación de contenido
   share.rs            Instancias compartibles por código: manifiesto, descarga verificada, export
   paths.rs            XDG en Linux; AppData/Local en Windows
 installer/             Segunda app de Tauri: instala el AppImage, crea el acceso del menú (Linux)
@@ -28,7 +28,7 @@ lanzamiento con el JSON vanilla (reglas de `inheritsFrom`: `mainClass` propio,
 `libraries`/`arguments` añadidas después de las de vanilla; `assetIndex`,
 `downloads` y `javaVersion` se quedan como en vanilla).
 src-tauri/            Capa fina de comandos IPC (workspace propio, exigido por Tauri)
-src/                  Frontend Svelte: Inicio, Instancias, Configuración
+src/                  Frontend Svelte: Inicio, Instancias, Personalizar, Configuración
 ```
 
 Módulos del spec que se añaden en sus fases (como módulos de `nebula-core` o crates nuevos):
@@ -70,8 +70,36 @@ npm run tauri build            # AppImage (Linux) o NSIS (Windows)
 | **Importar por código**: busca `NBL-XXXXXX`, muestra una vista previa (nombre, descripción, versión, loader, nº de archivos, si tu Java cumple el mínimo que pide) y, si confirmas, crea la instancia con su **nombre** y descarga mods/resourcepacks/shaders/config **y el fondo remoto** verificando SHA-1 y tamaño, sin repetir lo que ya esté completo, con progreso real | Real |
 | **Exportar**: genera una plantilla de manifiesto con los datos de tu instancia y la lista de tus mods activos, guardada en su propia carpeta | Real — pero sin URLs de descarga, porque no hay dónde subir los archivos (ver abajo) |
 | **Windows**: rutas, `java.exe`, detección en Program Files, classpath con `;`, configuración NSIS, iconos `.ico` e instalador compilado desde Linux con `cargo-xwin` | Instalador probado en Windows Server 2025 (GitHub Actions); **falta un Windows 10/11 de escritorio y el flujo completo de juego**. Windows 8/8.1 no es compatible con Tauri 2/WebView2 moderno |
-| Icono de Halloween en la app, ventana e instaladores | Real |
+| **Personalización del launcher**: icono propio, tema, color de acento, transparencia, animaciones y fondo general con PNG/JPG/WEBP/GIF animados | Real |
+| Icono de Halloween en la app, ventana e instaladores | Real (se puede cambiar el de la ventana y la barra lateral desde Personalizar) |
 | Cancelar una importación a mitad | No incluido todavía — sí hereda los reintentos y la verificación del resto del sistema de descargas |
+
+## Personalización del launcher
+
+En **Personalizar → Launcher** cada usuario puede cambiar la apariencia general de Nebula sin tocar
+archivos a mano:
+
+* **Icono propio**: PNG cuadrado de hasta 4 MB. Se usa en la barra lateral y como icono de la
+  ventana; el icono del menú del sistema sigue siendo el del paquete instalado.
+* **Colores**: tema base (oscuro, negro o púrpura), color de acento `#RRGGBB` con muestras
+  predefinidas, transparencia de paneles y animaciones de la interfaz.
+* **Fondo del launcher**: PNG, JPG, WEBP o GIF de hasta 15 MB. Los GIF y WEBP animados se
+  reproducen tal cual. Se puede ajustar como cubrir, contener o mosaico, con desenfoque y
+  oscurecimiento.
+* El fondo y el icono se guardan al instante; los colores y efectos se aplican con
+  **Guardar apariencia**. El fondo de cada instancia sigue siendo independiente y se configura
+  en la pestaña **Instancias**.
+
+Los archivos viven en el directorio de configuración (`launcher-background.<ext>` y
+`launcher-icon.png`), no dentro de una instancia. Al desinstalar o mover Nebula, la apariencia no
+viaja con las instancias.
+
+## Aviso legal
+
+Nebula Launcher es un proyecto independiente. **No está afiliado, asociado, autorizado,
+respaldado ni patrocinado por Mojang Studios, Microsoft Corporation ni sus filiales.**
+Minecraft es una marca registrada de Mojang Studios. Nebula no incluye ni distribuye Minecraft:
+descarga los archivos oficiales desde los servidores de Mojang con tu propia cuenta.
 
 ## Instancias compartibles: qué es real y qué falta
 
@@ -102,7 +130,7 @@ Cualquier sitio que pueda servir archivos estáticos por https sirve (un reposit
 que el propio manifiesto declara en sus URLs — ni uno más — y cada archivo se descarga con el
 mismo `Downloader` verificado que usan Mojang y Fabric. Al importar se usa el
 `name` del manifiesto como nombre de la instancia y, si existe `background_url`,
-se descarga el fondo validando que sea PNG, JPG o WEBP. «Exportar» en una instancia te da la
+se descarga el fondo validando que sea PNG, JPG, WEBP o GIF. «Exportar» en una instancia te da la
 plantilla con los datos correctos y la lista de tus mods; te falta solo subir cada archivo a tu
 sitio y pegar su URL (y, si quieres verificación de integridad, su SHA-1) en el JSON.
 

@@ -9,7 +9,14 @@
   import { lazyBackground } from "../lib/lazyBackground";
   import type { Instance } from "../lib/types";
 
-  let { goto }: { goto: (p: "instances" | "personalization") => void } = $props();
+  let {
+    goto,
+  }: {
+    goto: (
+      p: "instances" | "personalization",
+      tab?: "launcher" | "instances",
+    ) => void;
+  } = $props();
   const inst = $derived(app.selected);
   let editing = $state(false);
 
@@ -117,7 +124,7 @@
       </div>
       <span class="spacer"></span>
       <button class="icon-btn" title="Editar instancia" onclick={() => (editing = true)}><Icon name="edit" size={18} /></button>
-      <button class="icon-btn" title="Personalizar fondo" onclick={() => goto("personalization")}><Icon name="palette" size={18} /></button>
+      <button class="icon-btn" title="Personalizar fondo de la instancia" onclick={() => goto("personalization", "instances")}><Icon name="palette" size={18} /></button>
       <button class="icon-btn" title="Abrir carpeta de la instancia" onclick={openFolder}><Icon name="folder" size={18} /></button>
     </div>
     <div class="bottom">
