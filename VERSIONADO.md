@@ -3,7 +3,7 @@
 Nebula usa el formato **MAYOR.MENOR.PARCHE**, también conocido como SemVer:
 
 ```
-0.3.0
+0.3.1
 │ │ └── parche: cambios pequeños
 │ └──── menor: cambios relevantes
 └────── mayor: cambios grandes o incompatibles
@@ -36,12 +36,12 @@ por separado.
 
 ## Ejemplos con la versión actual
 
-La versión publicada ahora es **0.3.0**:
+La versión publicada ahora es **0.3.1**:
 
 | Cambio | Nueva versión | Comando |
 |---|---|---|
-| Un texto, un icono o un arreglo pequeño | `0.3.1` | `./scripts/bump-version.sh` |
-| Otra corrección pequeña | `0.3.2` | `./scripts/bump-version.sh` |
+| Un texto, un icono o un arreglo pequeño | `0.3.2` | `./scripts/bump-version.sh` |
+| Otra corrección pequeña | `0.3.3` | `./scripts/bump-version.sh` |
 | Una función nueva o un cambio relevante | `0.4.0` | `./scripts/bump-version.sh minor` |
 | Un arreglo pequeño después de `0.4.0` | `0.4.1` | `./scripts/bump-version.sh` |
 | Un rediseño o cambio grande | `1.0.0` | `./scripts/bump-version.sh major` |

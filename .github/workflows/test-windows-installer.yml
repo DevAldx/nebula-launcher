@@ -3,17 +3,17 @@ name: Windows installer test
 on:
   push:
     branches:
-      - test/windows-installer-0.3.0
+      - test/windows-installer-0.3.1
   workflow_dispatch:
     inputs:
       version:
         description: "Versión de Nebula a probar"
         required: true
-        default: "0.3.0"
+        default: "0.3.1"
       expected_sha256:
         description: "SHA-256 esperado del instalador (opcional)"
         required: false
-        default: "39001ee0b66f5a6f0e4813efa9d0b7cf2b15bb86d93a2f7481804d81e59b32a3"
+        default: "226b8d1615eb5c2cceacc00de4e243227709b390540840578c595e3998fae73c"
 
 permissions:
   contents: read
@@ -29,8 +29,8 @@ jobs:
       - name: Probar instalador y arranque
         shell: pwsh
         env:
-          TEST_VERSION: ${{ inputs.version || '0.3.0' }}
-          EXPECTED_SHA256: ${{ inputs.expected_sha256 || '39001ee0b66f5a6f0e4813efa9d0b7cf2b15bb86d93a2f7481804d81e59b32a3' }}
+          TEST_VERSION: ${{ inputs.version || '0.3.1' }}
+          EXPECTED_SHA256: ${{ inputs.expected_sha256 || '226b8d1615eb5c2cceacc00de4e243227709b390540840578c595e3998fae73c' }}
         run: |
           ./scripts/test-windows-install.ps1 -Version $env:TEST_VERSION -ExpectedSha256 $env:EXPECTED_SHA256
 
@@ -38,7 +38,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer-${{ inputs.version || '0.3.0' }}
+          name: windows-installer-${{ inputs.version || '0.3.1' }}
           path: |
             ${{ runner.temp }}/windows-test/report.txt
             ${{ runner.temp }}/windows-test/summary.json

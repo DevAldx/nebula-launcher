@@ -50,7 +50,8 @@ npm install
 cargo test -p nebula-core      # tests del núcleo
 npm run check                  # svelte-check + TypeScript
 npm run tauri dev              # ejecutar la app
-npm run tauri build            # AppImage (Linux) o NSIS (Windows)
+./scripts/build-appimage.sh    # AppImage Linux firmado (recomendado)
+npm run tauri build -- --bundles nsis  # instalador Windows
 ```
 
 ## Seguridad (Fase 1)
@@ -171,12 +172,12 @@ carpeta de cada tarjeta abre la raíz de la instancia para copiarla.
 
 ## Cómo ejecutar el AppImage ya construido
 
-Descarga `Nebula.Launcher_0.3.0_amd64.AppImage` desde la página de releases:
-<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.3.0>
+Descarga `Nebula.Launcher_0.3.1_amd64.AppImage` desde la página de releases:
+<https://github.com/DevAldx/nebula-launcher/releases/tag/v0.3.1>
 
 ```
-chmod +x "Nebula.Launcher_0.3.0_amd64.AppImage"
-./"Nebula.Launcher_0.3.0_amd64.AppImage"
+chmod +x "Nebula.Launcher_0.3.1_amd64.AppImage"
+./"Nebula.Launcher_0.3.1_amd64.AppImage"
 ```
 
 El AppImage no necesita instalación. Si quieres una entrada en el menú de
@@ -187,13 +188,20 @@ opcional no se publica como asset en esta release.
 
 ```
 npm install
-npm run tauri build -- --bundles appimage
+export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
+./scripts/build-appimage.sh
 # el .AppImage queda en src-tauri/target/release/bundle/appimage/
 
 cd installer && npm install
 npm run tauri build -- --bundles appimage
 # deja el instalador junto al AppImage del launcher antes de ejecutarlo
 ```
+
+El AppImage prefiere **WebKitGTK 4.1 y GTK 3 del sistema** cuando están
+instalados, porque cargar la copia empaquetada (~300 MB) desde el AppImage
+retrasa el splash casi un segundo. Si el sistema no las tiene, usa
+automáticamente la copia incluida. Para forzar esa copia al probar:
+`NEBULA_BUNDLED_WEBKIT=1 ./"Nebula Launcher_0.3.1_amd64.AppImage"`.
 
 ## Actualizaciones
 
@@ -219,8 +227,8 @@ versión por cada commit. La guía completa está en `VERSIONADO.md`.
 
 Para publicar una versión: subir la versión con `scripts/bump-version.sh`
 (`patch`, `minor`, `major` o `set X.Y.Z`), compilar con
-`TAURI_SIGNING_PRIVATE_KEY` en cada plataforma, generar `latest.json` con
-`create_latest_json.sh` y subir todos los artefactos firmados (`.AppImage`, `.AppImage.sig`,
+`TAURI_SIGNING_PRIVATE_KEY` en cada plataforma (`./scripts/build-appimage.sh` en
+Linux), generar `latest.json` con `create_latest_json.sh` y subir todos los artefactos firmados (`.AppImage`, `.AppImage.sig`,
 `.exe`/`.nsis.zip` de Windows y `latest.json`) al mismo release.
 Los detalles están en `INSTRUCCIONES_ACTUALIZACION.txt` y `INSTRUCCIONES_WINDOWS.txt`.
 
@@ -238,7 +246,7 @@ y hay tres formas de compilar o probar el instalador NSIS:
 1. **En un PC con Windows**: `scripts/build-windows.ps1` (requiere Rust MSVC,
    Node, Build Tools C++ y la clave de firma).
 2. **Desde Linux**: `cargo-xwin` + NSIS 3.11 (sección 2b de
-   `INSTRUCCIONES_WINDOWS.txt`). Así se compiló 0.3.0.
+   `INSTRUCCIONES_WINDOWS.txt`). Así se compilaron 0.3.0 y 0.3.1.
 3. **Con GitHub Actions**: `.github/workflows/test-windows-installer.yml`
    descarga un `.exe` ya publicado y lo prueba en `windows-latest`. No compila
    el instalador; para eso usa la opción 1 o 2.

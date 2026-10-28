@@ -1489,8 +1489,35 @@ async fn startup_steps(app: AppHandle) {
     tokio::time::sleep(Duration::from_millis(350)).await;
 }
 
+fn ensure_main_window(app: &AppHandle) -> Option<tauri::WebviewWindow> {
+    if let Some(window) = app.get_webview_window("main") {
+        return Some(window);
+    }
+    // Respaldo: si la creación diferida falló, se crea aquí antes de mostrar.
+    let config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|window| window.label == "main")?
+        .clone();
+    match tauri::WebviewWindowBuilder::from_config(app, &config) {
+        Ok(builder) => match builder.build() {
+            Ok(window) => Some(window),
+            Err(e) => {
+                eprintln!("no se pudo crear la ventana principal: {e}");
+                None
+            }
+        },
+        Err(e) => {
+            eprintln!("configuración de la ventana principal inválida: {e}");
+            None
+        }
+    }
+}
+
 fn show_main_and_close_splash(app: &AppHandle) {
-    if let Some(main) = app.get_webview_window("main") {
+    if let Some(main) = ensure_main_window(app) {
         let _ = main.show();
         let _ = main.set_focus();
     }
@@ -1545,17 +1572,48 @@ pub fn run() {
             // `bundle.icon` empieza por `icons/icon.png` (512×512), así que este
             // es el icono de Halloween que Tauri incrusta para la ventana. Si el
             // usuario guardó uno propio, se aplica al arrancar.
-            if let Some(window) = app.get_webview_window("main") {
-                let custom = background::load_launcher_icon(&config_dir)
-                    .ok()
-                    .flatten()
-                    .and_then(|(_, bytes)| tauri::image::Image::from_bytes(&bytes).ok());
-                if let Some(icon) = custom {
-                    let _ = window.set_icon(icon);
-                } else if let Some(icon) = app.default_window_icon().cloned() {
-                    let _ = window.set_icon(icon);
+            //
+            // La ventana principal se crea un poco después de que el splash
+            // esté visible: así su webview no compite con el primer pintado de
+            // la bienvenida. `create: false` en tauri.conf.json evita que Tauri
+            // la cree antes de tiempo.
+            let main_config = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|window| window.label == "main")
+                .cloned();
+            let main_handle = app.handle().clone();
+            let main_config_dir = config_dir.clone();
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(Duration::from_millis(120)).await;
+                let Some(config) = main_config else {
+                    return;
+                };
+                let builder = match tauri::WebviewWindowBuilder::from_config(&main_handle, &config)
+                {
+                    Ok(builder) => builder,
+                    Err(e) => {
+                        eprintln!("configuración de la ventana principal inválida: {e}");
+                        return;
+                    }
+                };
+                match builder.build() {
+                    Ok(window) => {
+                        let custom = background::load_launcher_icon(&main_config_dir)
+                            .ok()
+                            .flatten()
+                            .and_then(|(_, bytes)| tauri::image::Image::from_bytes(&bytes).ok());
+                        if let Some(icon) = custom {
+                            let _ = window.set_icon(icon);
+                        } else if let Some(icon) = main_handle.default_window_icon().cloned() {
+                            let _ = window.set_icon(icon);
+                        }
+                    }
+                    Err(e) => eprintln!("no se pudo crear la ventana principal: {e}"),
                 }
-            }
+            });
 
             // La ventana principal nace oculta. Esta tarea hace el trabajo
             // real, actualiza la bienvenida y, pase lo que pase, termina

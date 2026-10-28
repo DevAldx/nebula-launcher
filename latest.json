@@ -1,15 +1,15 @@
 {
-  "version": "0.3.0",
-  "notes": "Ventana de bienvenida animada, arranque real con comprobación de versión y página Acerca de con copyright de Mojang.",
-  "pub_date": "2026-10-28T05:27:18Z",
+  "version": "0.3.1",
+  "notes": "Arranque más rápido: el splash aparece casi al instante. El AppImage usa WebKitGTK/GTK del sistema cuando están disponibles y conserva la copia empaquetada como respaldo. Limpieza de cachés y artefactos de compilación.",
+  "pub_date": "2026-10-28T15:55:26Z",
   "platforms": {
     "linux-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTVU2a3FjMFJ6VE53SERndXlnblZYMWMwU3NuL0gzaU1SU1VZNS94YXRiM29xNzFPMFFzOFY3aHZnYWNoSVNWamw4QTB6czRGaXZTRjRNaDU3bmNSZmdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMTY0NDAxCWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMy4wX2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4zLjAKRlVrUis5WS9BbVVTeUhmMUloUzFqSWphTjlRaDBsVzFoMTMyN0t6dEJpMUlwem42b0xHL1lsNzNNWHN0aFp2NmhnQmhBOGYzVUhsR094UGo0N1pFQlE9PQo=",
-      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.3.0/Nebula.Launcher_0.3.0_amd64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTWRxbGt1V0pRRG10d2VhYWlwN2g2VlhFT0N5dk1WMkl1TGJzcFhJb3dIUEVpQlV4eE0ybjNJZHRqbm5VU0EyQWJpWjE4S0VoNW9keEdMNXd0SXNkWkFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMjAyMTA4CWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMy4xX2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4zLjEKdXZqa3NURFZSODB3cWQzcHhqS0NtU3BMNWpib3l2czhQWEJRSkFSRW1SZHVKYWV2SFJreEpHdTY2M0VIc0VHMFd3dmJ5YkZHZGxpK0V5Y3ovSytEQ2c9PQo=",
+      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.3.1/Nebula.Launcher_0.3.1_amd64.AppImage"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTWNQdG5IUFBaMSszeEN3ckFwUUx5aEZmalAxampnNEN2NG1mcVVmT3VjT3lRZ2lHL25Wb1EzVDZ1WitOS040Mjc1OGxZNHdySFFmTkFPTGNZNGRvNEFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMTY1MTc1CWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMy4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMuMApPYmFkSzVScWtqSklrRjlQVVJpODJISmRJbU95TlI2dUppNEoweFN2ZnNyTFlnSmFWSGxIc1hxYU5qSU9hMmZJWVV3UUdqeXlUTit6cnRPcWZGM2FDUT09Cg==",
-      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.3.0/Nebula.Launcher_0.3.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUU21NUWRmMVVjTVRYR3lGcWphS2tSNDhQYngzeDZ3cUlteEM4WCs1dG1SL25xNGcycjg2ckRxbkFqVm9pSTlMQ2UybDBrcGFHMUpSVDZpR0ZmS1RkUkpJVXB1aXcwNGd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMjAyOTA5CWZpbGU6TmVidWxhIExhdW5jaGVyXzAuMy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMuMQpIYXRKa1lVK3B3bFFjVnJLTG1DcFNDOFo5MmNVQXdLUkkzdjNiekxWS1p3R1ZEbk9QRmVwYXhGckJMTEd2c2habWdrY3h1a2N4bUx5cGtvZENZYldCQT09Cg==",
+      "url": "https://github.com/DevAldx/nebula-launcher/releases/download/v0.3.1/Nebula.Launcher_0.3.1_x64-setup.exe"
     }
   }
 }

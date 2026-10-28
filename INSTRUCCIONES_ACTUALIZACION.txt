@@ -2,7 +2,7 @@
 NEBULA LAUNCHER — COMPILAR Y PUBLICAR ACTUALIZACIONES
 ========================================
 
-Última revisión: versión 0.3.0
+Última revisión: versión 0.3.1
 Carpeta del proyecto: /home/dns10011/Escritorio/laucher etc/nebula-launcher-fase7-eufonia
 Repo de releases: https://github.com/DevAldx/nebula-launcher
 
@@ -78,15 +78,21 @@ se actualiza solo al compilar.
     cd "/home/dns10011/Escritorio/laucher etc/nebula-launcher-fase7-eufonia"
     export PATH="$HOME/.cargo/bin:$PATH"
     export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
-    npm run tauri build
+    ./scripts/build-appimage.sh
+
+El script compila el AppImage, sustituye el AppRun generado por Tauri por
+uno que prefiere WebKitGTK/GTK del sistema cuando existen (arranque rápido)
+y vuelve a firmar el AppImage con la misma clave.
 
 Resultado en src-tauri/target/release/bundle/appimage/:
 
-    Nebula Launcher_0.3.0_amd64.AppImage
-    Nebula Launcher_0.3.0_amd64.AppImage.sig
+    Nebula Launcher_0.3.1_amd64.AppImage
+    Nebula Launcher_0.3.1_amd64.AppImage.sig
 
 El .sig se genera solo porque bundle.createUpdaterArtifacts = true.
 Si no aparece el .sig, es que el build no vio TAURI_SIGNING_PRIVATE_KEY.
+Si el sistema no tiene WebKitGTK 4.1, el AppImage usa la copia empaquetada;
+se puede forzar con NEBULA_BUNDLED_WEBKIT=1.
 
 El propio AppImage firmado es el artefacto que descarga el updater
 (en Linux acepta AppImage sin comprimir o .AppImage.tar.gz).
@@ -129,8 +135,8 @@ Si no defines GITHUB_REPO, intenta deducirlo del remoto `origin` de git.
 ----------------------------------------
 
 1. Repo -> Releases -> Draft a new release
-2. Tag: v0.3.0   (debe coincidir con la versión; prefijo "v")
-3. Título: Nebula Launcher v0.3.0
+2. Tag: v0.3.1   (debe coincidir con la versión; prefijo "v")
+3. Título: Nebula Launcher v0.3.1
 4. Sube desde bundle/appimage/:
       *.AppImage
       *.AppImage.sig
@@ -196,6 +202,6 @@ La app no detecta la actualización
     ./scripts/bump-version.sh          # o minor / major / set X.Y.Z
     export PATH="$HOME/.cargo/bin:$PATH"
     export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
-    npm run tauri build
+    ./scripts/build-appimage.sh
     GITHUB_REPO="DevAldx/nebula-launcher" ./create_latest_json.sh
     # Subir artefactos + latest.json al release vX.Y.Z y publicar
