@@ -53,8 +53,18 @@ Fecha: 2026-10-28
   - binario release extraído con librerías del sistema: splash a los 0,15 s;
   - con `NEBULA_BUNDLED_WEBKIT=1` (WebKit empaquetada): splash a los 1,59 s.
   - La ventana principal aparece y la app sigue viva en todos los casos.
-- Prueba Windows 0.3.1: pendiente de ejecutar en GitHub Actions.
-- Actualización real 0.3.0 → 0.3.1: pendiente de probar tras publicar.
+- Prueba Windows 0.3.1 en GitHub Actions (run `40721304886`): Windows Server
+  2025 Datacenter 10.0.26100 con WebView2 155.0.4283.62. SHA-256 del instalador
+  correcto, instalación silenciosa con código 0, `FileVersion` y
+  `ProductVersion` 0.3.1, ventana principal encontrada y app viva. La captura
+  muestra `V0.3.1` y el pie legal. El árbol UIA encontró 0 elementos con nombre
+  y no encontró el botón de inicio de sesión.
+- Actualización real 0.3.0 → 0.3.1 con XDG aislados: el diálogo mostró
+  «0.3.0 → 0.3.1», se pulsó «Actualizar ahora», la app se cerró, el AppImage se
+  reemplazó por el 0.3.1 (114 489 848 bytes, SHA-256 `0a6ea403...`), se
+  reinició sola y la ventana nueva muestra `V0.3.1`. El registro no tuvo
+  errores. La automatización se hizo con `GDK_BACKEND=x11`; la app probada era
+  el AppImage 0.3.0 publicado.
 
 ## Limitaciones conocidas
 
@@ -65,7 +75,10 @@ Fecha: 2026-10-28
 - La comprobación de actualizaciones del splash y la del diálogo principal
   pueden duplicarse. El diálogo principal sigue siendo el respaldo.
 - La prueba de Windows es en Windows Server 2025, no en un Windows 10/11 de
-  escritorio. En 0.3.0 se verificaron instalación, arranque y ventana principal;
+  escritorio. En 0.3.1 se verificaron instalación, arranque y ventana principal;
   el árbol UIA no encontró el botón de inicio de sesión, así que el inicio de
   sesión, la personalización y el flujo completo de juego no se revalidaron en
   Windows. La prueba de 0.2.0 sí cubrió inicio de sesión y personalización.
+- La actualización real se probó en CachyOS con X11 y directorios XDG aislados.
+  No se probó en Wayland puro ni en otras distribuciones; el actualizador de
+  Tauri reemplaza el AppImage y lo reinicia, que es el flujo publicado.
