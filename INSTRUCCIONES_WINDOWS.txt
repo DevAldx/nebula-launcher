@@ -9,13 +9,13 @@ Repo de releases:
   https://github.com/DevAldx/nebula-launcher
 
 IMPORTANTE
-  La versión 0.3.0 se compila desde Linux con cargo-xwin + NSIS. La prueba se
+  La versión 0.3.1 se compila desde Linux con cargo-xwin + NSIS. La prueba se
   hizo en un runner windows-latest de GitHub Actions (Windows Server 2025,
   WebView2 155.0.4283.62): SHA-256 correcto, instalación silenciosa con código
-  0, FileVersion/ProductVersion 0.3.0, ventana principal y app viva; la captura
-  muestra V0.3.0, Acerca de y el pie legal. El árbol UIA se capturó con solo 2
-  elementos y no encontró el botón de inicio de sesión, así que esa parte no
-  se revalidó en 0.3.0. La versión 0.2.0 ya se probó allí con
+  0, FileVersion/ProductVersion 0.3.1, ventana principal y app viva; la captura
+  muestra V0.3.1 y el pie legal. El árbol UIA encontró 0 elementos con nombre y
+  no encontró el botón de inicio de sesión, así que esa parte no se revalidó en
+  0.3.1. La versión 0.2.0 ya se probó allí con
   SHA-256 correcto, instalación código 0, ventana principal, botón Microsoft,
   ventana "Nebula — Iniciar sesión" y Cancelar. Con UI Automation se comprobó
   el icono PNG, el fondo GIF, el tema púrpura, el acento #22c55e, el desenfoque
