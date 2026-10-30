@@ -195,8 +195,10 @@ impl Downloader {
         if let Some(parent) = task.dest.parent() {
             filesystem::create_dir_all(parent)?;
         }
+        // Nombre temporal único por intento: `create_new` no sigue symlinks y
+        // dos descargas concurrentes al mismo destino no comparten el `.part`.
         let mut part_name = task.dest.as_os_str().to_os_string();
-        part_name.push(".part");
+        part_name.push(format!(".{}.part", rand::random::<u64>()));
         let part = PathBuf::from(part_name);
 
         let resp = self
@@ -208,7 +210,10 @@ impl Downloader {
             .map_err(|e| CoreError::Network(format!("{}: {e}", task.url)))?;
 
         let result = async {
-            let mut file = tokio::fs::File::create(&part)
+            let mut file = tokio::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&part)
                 .await
                 .map_err(|e| CoreError::io(&part, e))?;
             let mut hasher = Sha1::new();
@@ -261,9 +266,19 @@ impl Downloader {
         .await;
 
         match result {
-            Ok(()) => tokio::fs::rename(&part, &task.dest)
-                .await
-                .map_err(|e| CoreError::io(&task.dest, e)),
+            Ok(()) => {
+                // En Windows `rename` no reemplaza un archivo existente; si el
+                // destino estaba corrupto, hay que quitarlo antes.
+                #[cfg(windows)]
+                let _ = tokio::fs::remove_file(&task.dest).await;
+                match tokio::fs::rename(&part, &task.dest).await {
+                    Ok(()) => Ok(()),
+                    Err(e) => {
+                        let _ = tokio::fs::remove_file(&part).await;
+                        Err(CoreError::io(&task.dest, e))
+                    }
+                }
+            }
             Err(e) => {
                 let _ = tokio::fs::remove_file(&part).await;
                 Err(e)

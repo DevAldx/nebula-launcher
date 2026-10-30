@@ -3,7 +3,7 @@ import { api } from "./api";
 import { accentColors } from "./color";
 import type {
   Account, AppInfo, AuthStateEvent, GameState, GameStateEvent, ImportStateEvent, Instance,
-  InstanceList, JavaRuntime, LogEvent, ProgressEvent, Settings,
+  InstanceList, InstanceManifest, JavaRuntime, LogEvent, ProgressEvent, Settings,
 } from "./types";
 
 const MAX_LOG_LINES = 1500;
@@ -205,12 +205,12 @@ class AppState {
     }
   }
 
-  async importFromCode(code: string) {
+  async importFromCode(manifest: InstanceManifest) {
     this.importBusy = true;
     this.importError = null;
     this.importedId = null;
     try {
-      await api.importFromCode(code);
+      await api.importFromCode(manifest);
       // el resultado llega por el evento `import-state`
     } catch (e) {
       this.importBusy = false;

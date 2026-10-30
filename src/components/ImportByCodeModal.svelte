@@ -26,7 +26,7 @@
 
   async function install() {
     if (!manifest) return;
-    await app.importFromCode(manifest.code);
+    await app.importFromCode(manifest);
   }
 
   const progress = $derived(manifest ? app.progress[manifest.code] : undefined);

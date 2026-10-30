@@ -32,7 +32,7 @@
     phase = "installing";
     error = "";
     try {
-      step = "Copiando archivos…";
+      step = "Verificando la firma y copiando archivos…";
       result = await invoke<InstallResult>("install_from_path", { sourcePath: source.path });
       step = "Creando acceso en el menú de aplicaciones…";
       phase = "done";
@@ -56,15 +56,30 @@
 
   async function onFileChosen(e: Event) {
     const input = e.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+    const files = Array.from(input.files ?? []);
+    const file = files.find((f) => /\.appimage$/i.test(f.name));
+    if (!file) {
+      error = "Selecciona el archivo .AppImage.";
+      phase = "error";
+      return;
+    }
+    const sig = files.find((f) => f.name === `${file.name}.sig`);
+    if (!sig) {
+      error = "Selecciona también el archivo .sig que acompaña al AppImage.";
+      phase = "error";
+      return;
+    }
+
     phase = "installing";
     error = "";
     try {
-      step = "Leyendo el archivo elegido…";
-      const data_base64 = await readAsBase64(file);
-      step = "Copiando archivos…";
-      result = await invoke<InstallResult>("install_from_bytes", { fileName: file.name, dataBase64: data_base64 });
+      step = "Leyendo y verificando el archivo elegido…";
+      const [data_base64, signature] = await Promise.all([readAsBase64(file), sig.text()]);
+      result = await invoke<InstallResult>("install_from_bytes", {
+        fileName: file.name,
+        dataBase64: data_base64,
+        signature,
+      });
       step = "Creando acceso en el menú de aplicaciones…";
       phase = "done";
     } catch (e) {
@@ -97,10 +112,18 @@
     <br /><br />
     <button class="btn ghost" onclick={() => (phase = "picking")}>Elegir otro archivo…</button>
   {:else if phase === "picking"}
-    <p class="muted">No se encontró Nebula-Launcher.AppImage junto al instalador.</p>
+    <p class="muted">No se encontró un Nebula-Launcher.AppImage firmado junto al instalador.</p>
+    <p class="muted small">Selecciona el AppImage y su archivo <span class="mono">.sig</span> (puedes elegir ambos a la vez).</p>
     <br />
-    <input bind:this={fileInput} type="file" accept=".AppImage,.appimage" hidden onchange={onFileChosen} />
-    <button class="btn primary" onclick={() => fileInput?.click()}>Elegir Nebula-Launcher.AppImage…</button>
+    <input
+      bind:this={fileInput}
+      type="file"
+      accept=".AppImage,.appimage,.sig"
+      multiple
+      hidden
+      onchange={onFileChosen}
+    />
+    <button class="btn primary" onclick={() => fileInput?.click()}>Elegir AppImage y firma…</button>
   {:else if phase === "installing"}
     <p>Instalando…</p>
     <div class="bar"><div class="fill"></div></div>

@@ -125,6 +125,9 @@ const MAX_BACKGROUND_B64: usize = 21 * 1024 * 1024; // 15 MB de imagen + margen
 const MAX_ICON_B64: usize = 6 * 1024 * 1024; // 4 MB de PNG + margen
 const MAX_MOD_B64: usize = 268 * 1024 * 1024; // 200 MB por mod + margen
 const MAX_MOD_FILES: usize = 256;
+// Tope agregado del IPC: evita que 256 archivos de 200 MB se decodifiquen a la
+// vez (hasta ~51 GB en memoria) y agoten el proceso.
+const MAX_MOD_TOTAL_B64: usize = 1024 * 1024 * 1024; // 1 GiB codificado
 
 type CmdResult<T> = Result<T, CommandError>;
 
@@ -606,7 +609,12 @@ fn open_url(url: String) -> CmdResult<()> {
     if parsed.scheme() != "https" {
         return Err(CommandError::new("solo se permiten enlaces https"));
     }
-    const ALLOWED: &[&str] = &["microsoft.com", "www.microsoft.com", "login.microsoftonline.com"];
+    const ALLOWED: &[&str] = &[
+        "microsoft.com",
+        "www.microsoft.com",
+        "login.microsoftonline.com",
+        "login.live.com",
+    ];
     if !ALLOWED.contains(&parsed.host_str().unwrap_or_default()) {
         return Err(CommandError::new("ese enlace no está permitido aquí"));
     }
@@ -746,7 +754,22 @@ fn import_mods(
             "demasiados archivos en una sola importación (máximo {MAX_MOD_FILES})"
         )));
     }
-    let mut decoded = Vec::with_capacity(files.len());
+
+    let mut total_b64 = 0usize;
+    for f in &files {
+        total_b64 = total_b64
+            .checked_add(f.data_base64.len())
+            .ok_or_else(|| CommandError::new("la importación es demasiado grande"))?;
+        if total_b64 > MAX_MOD_TOTAL_B64 {
+            return Err(CommandError::new(
+                "la importación supera el tamaño total máximo admitido",
+            ));
+        }
+    }
+
+    // Se procesa de uno en uno: el pico de memoria es el de un solo mod, no el
+    // de todos los archivos seleccionados.
+    let mut written = Vec::with_capacity(files.len());
     for f in files {
         if f.data_base64.len() > MAX_MOD_B64 {
             return Err(CommandError::new(format!(
@@ -757,12 +780,15 @@ fn import_mods(
         let bytes = BASE64
             .decode(f.data_base64.as_bytes())
             .map_err(|e| CommandError::new(format!("{}: archivo no válido ({e})", f.name)))?;
-        decoded.push(mods::ImportFile {
-            name: f.name,
-            bytes,
-        });
+        written.push(mods::import_one(
+            &mods_dir,
+            mods::ImportFile {
+                name: f.name,
+                bytes,
+            },
+        )?);
     }
-    Ok(mods::import(&mods_dir, decoded)?)
+    Ok(written)
 }
 
 /// Abre en el explorador de archivos del sistema la carpeta `mods` o `config`
@@ -819,9 +845,22 @@ struct ImportStateEvent {
 /// llega por el evento `install-progress` ya existente, y el resultado final
 /// por `import-state`.
 #[tauri::command]
-async fn import_from_code(app: AppHandle, state: State<'_, AppState>, code: String) -> CmdResult<()> {
-    let base = manifest_base_url(&state)?;
-    let manifest = share::fetch_manifest(&state.auth_http, &base, &code).await?;
+async fn import_from_code(
+    app: AppHandle,
+    _state: State<'_, AppState>,
+    code: String,
+    manifest: InstanceManifest,
+) -> CmdResult<()> {
+    // Se instala exactamente el manifiesto que el usuario vio en la vista
+    // previa. Volver a pedirlo al servidor permitía que cambiara entre la
+    // aprobación y la instalación (TOCTOU).
+    let code = share::validate_code(&code)?;
+    if manifest.code != code {
+        return Err(CommandError::new(
+            "el manifiesto no corresponde al código solicitado",
+        ));
+    }
+    share::validate_manifest(&manifest)?;
 
     let app2 = app.clone();
     tauri::async_runtime::spawn(async move {
@@ -1517,10 +1556,14 @@ fn ensure_main_window(app: &AppHandle) -> Option<tauri::WebviewWindow> {
 }
 
 fn show_main_and_close_splash(app: &AppHandle) {
-    if let Some(main) = ensure_main_window(app) {
-        let _ = main.show();
-        let _ = main.set_focus();
-    }
+    let Some(main) = ensure_main_window(app) else {
+        // Si la ventana principal no se pudo crear, no se cierra el splash:
+        // dejar la app sin ninguna ventana visible es peor que mostrar el error.
+        eprintln!("no se pudo crear la ventana principal; se mantiene el splash");
+        return;
+    };
+    let _ = main.show();
+    let _ = main.set_focus();
     if let Some(splash) = app.get_webview_window("splash") {
         let _ = splash.close();
     }

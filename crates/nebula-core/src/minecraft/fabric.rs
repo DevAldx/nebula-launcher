@@ -9,8 +9,6 @@
 //! (el propio Fabric Loader + el mapeo "intermediary"), que se añaden a las de
 //! la versión vanilla.
 
-use std::fs;
-
 use serde::Deserialize;
 
 use super::meta::{Library, VersionMeta};
@@ -120,7 +118,7 @@ pub async fn fetch_profile(
     loader_version: &str,
 ) -> Result<FabricProfile> {
     let cache_path = profile_cache_path(paths, mc_version, loader_version)?;
-    if let Ok(bytes) = fs::read(&cache_path) {
+    if let Some(bytes) = crate::filesystem::read_verified(&cache_path) {
         if let Ok(profile) = serde_json::from_slice::<FabricProfile>(&bytes) {
             return Ok(profile);
         }
@@ -130,7 +128,7 @@ pub async fn fetch_profile(
     let profile: FabricProfile = serde_json::from_slice(&bytes)
         .map_err(|e| CoreError::Network(format!("perfil de Fabric inesperado: {e}")))?;
     // Solo caché: si falla escribirla no es un error fatal.
-    let _ = crate::filesystem::write_atomic(&cache_path, &bytes);
+    let _ = crate::filesystem::write_verified(&cache_path, &bytes);
     Ok(profile)
 }
 

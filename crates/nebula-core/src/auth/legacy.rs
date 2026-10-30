@@ -68,7 +68,7 @@ pub async fn request_device_code(
         .await
         .map_err(|e| CoreError::Network(e.to_string()))?;
     if !status.is_success() {
-        return Err(describe_oauth_error(status.as_u16(), &text));
+        return Err(describe_oauth_error(status.as_u16(), &text, false));
     }
     let parsed: DeviceCodeResp = serde_json::from_str(&text).map_err(|e| {
         CoreError::Auth(format!(
@@ -135,7 +135,7 @@ pub async fn poll_once(
         Some("authorization_declined") => Err(CoreError::Auth(
             "se canceló el inicio de sesión en el navegador.".into(),
         )),
-        _ => Err(describe_oauth_error(status.as_u16(), &text)),
+        _ => Err(describe_oauth_error(status.as_u16(), &text, false)),
     }
 }
 
@@ -163,7 +163,7 @@ pub async fn refresh(
         .await
         .map_err(|e| CoreError::Network(e.to_string()))?;
     if !status.is_success() {
-        return Err(describe_oauth_error(status.as_u16(), &text));
+        return Err(describe_oauth_error(status.as_u16(), &text, true));
     }
     let parsed: TokenResp = serde_json::from_str(&text).map_err(|e| {
         CoreError::Auth(format!(
@@ -181,13 +181,23 @@ pub async fn refresh(
     }
 }
 
-fn describe_oauth_error(status: u16, body: &str) -> CoreError {
+fn describe_oauth_error(status: u16, body: &str, session_expired: bool) -> CoreError {
     let parsed: TokenResp = serde_json::from_str(body).unwrap_or_default();
     if let Some(error) = parsed.error {
         let description = parsed
             .error_description
             .map(|d| format!(": {d}"))
             .unwrap_or_default();
+        if session_expired
+            && matches!(
+                error.as_str(),
+                "invalid_grant" | "invalid_token" | "interaction_required" | "consent_required"
+            )
+        {
+            return CoreError::AuthExpired(format!(
+                "Microsoft rechazó la sesión heredada ({error}){description}"
+            ));
+        }
         return CoreError::Auth(format!(
             "Microsoft rechazó el inicio de sesión heredado ({error}){description}"
         ));
@@ -326,5 +336,22 @@ mod tests {
         assert_eq!(tokens.access_token, "at2");
         assert_eq!(tokens.refresh_token, "rt2");
         Ok(())
+    }
+
+    #[test]
+    fn only_refresh_treats_invalid_grant_as_expired_session() {
+        let body = r#"{"error":"invalid_grant","error_description":"revocado"}"#;
+        assert!(matches!(
+            describe_oauth_error(400, body, true),
+            CoreError::AuthExpired(_)
+        ));
+        assert!(matches!(
+            describe_oauth_error(400, body, false),
+            CoreError::Auth(_)
+        ));
+        assert!(matches!(
+            describe_oauth_error(503, "<html>caído</html>", true),
+            CoreError::Auth(_)
+        ));
     }
 }

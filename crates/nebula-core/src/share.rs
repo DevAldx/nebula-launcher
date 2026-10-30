@@ -79,6 +79,77 @@ pub struct InstanceManifest {
 const MAX_MANIFEST_BYTES: usize = 1024 * 1024;
 /// Mismo límite que `background`: 15 MB.
 const MAX_BACKGROUND_BYTES: usize = 15 * 1024 * 1024;
+/// Topes agregados: un manifiesto pequeño puede declarar miles de archivos
+/// enormes y llenar el disco si no se limita el conjunto.
+const MAX_MANIFEST_FILES: usize = 512;
+const MAX_FILE_BYTES: u64 = 2 * 1024 * 1024 * 1024; // 2 GiB
+const MAX_TOTAL_BYTES: u64 = 10 * 1024 * 1024 * 1024; // 10 GiB
+
+fn is_valid_sha1(value: &str) -> bool {
+    value.len() == 40 && value.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+fn validate_files(
+    files: &[ManifestFile],
+    label: &str,
+    count: &mut usize,
+    total: &mut u64,
+) -> Result<()> {
+    for file in files {
+        let sha1 = file.sha1.as_deref().unwrap_or_default();
+        if !is_valid_sha1(sha1) {
+            return Err(CoreError::invalid(format!(
+                "{label}/{}: falta un SHA-1 válido en el manifiesto",
+                file.file_name
+            )));
+        }
+        let size = file.size.ok_or_else(|| {
+            CoreError::invalid(format!(
+                "{label}/{}: falta el tamaño en el manifiesto",
+                file.file_name
+            ))
+        })?;
+        if size > MAX_FILE_BYTES {
+            return Err(CoreError::invalid(format!(
+                "{label}/{}: el archivo supera el tamaño máximo permitido",
+                file.file_name
+            )));
+        }
+        *count += 1;
+        if *count > MAX_MANIFEST_FILES {
+            return Err(CoreError::invalid(
+                "el manifiesto declara demasiados archivos",
+            ));
+        }
+        *total = (*total)
+            .checked_add(size)
+            .ok_or_else(|| CoreError::invalid("el tamaño total del manifiesto desborda"))?;
+        if *total > MAX_TOTAL_BYTES {
+            return Err(CoreError::invalid(
+                "el manifiesto supera el tamaño total máximo permitido",
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Los manifiestos compartidos solo pueden instalar archivos con integridad
+/// verificable. Sin hash/tamaño, un servidor comprometido podría entregar
+/// cualquier JAR y Minecraft lo ejecutaría al iniciar la instancia.
+pub fn validate_manifest(manifest: &InstanceManifest) -> Result<()> {
+    let mut count = 0;
+    let mut total = 0;
+    validate_files(&manifest.mods, "mods", &mut count, &mut total)?;
+    validate_files(
+        &manifest.resourcepacks,
+        "resourcepacks",
+        &mut count,
+        &mut total,
+    )?;
+    validate_files(&manifest.shaderpacks, "shaderpacks", &mut count, &mut total)?;
+    validate_files(&manifest.config_files, "config", &mut count, &mut total)?;
+    Ok(())
+}
 
 fn manifest_url(base_url: &str, code: &str) -> Result<String> {
     let base = base_url.trim().trim_end_matches('/');
@@ -96,8 +167,9 @@ fn manifest_url(base_url: &str, code: &str) -> Result<String> {
 fn hosts_in(manifest: &InstanceManifest) -> Result<Vec<String>> {
     let mut hosts = HashSet::new();
     let mut add = |raw: &str, label: &str| -> Result<()> {
-        let url = reqwest::Url::parse(raw)
-            .map_err(|e| CoreError::Network(format!("URL inválida en el manifiesto ({label}): {e}")))?;
+        let url = reqwest::Url::parse(raw).map_err(|e| {
+            CoreError::Network(format!("URL inválida en el manifiesto ({label}): {e}"))
+        })?;
         if url.scheme() != "https" {
             return Err(CoreError::Network(format!(
                 "{label}: solo se admiten URLs https"
@@ -168,6 +240,7 @@ pub async fn fetch_manifest(
             "el manifiesto pide Fabric pero no indica la versión del loader",
         ));
     }
+    validate_manifest(&manifest)?;
     manifest.code = code;
     Ok(manifest)
 }
@@ -194,12 +267,21 @@ async fn download_set(
     let mut tasks = Vec::with_capacity(files.len());
     for file in files {
         let dest = join_safe(dest_dir, &file.file_name)?;
+        let sha1 = file.sha1.clone().ok_or_else(|| {
+            CoreError::invalid(format!("{}: el manifiesto no indica SHA-1", file.file_name))
+        })?;
+        let size = file.size.ok_or_else(|| {
+            CoreError::invalid(format!(
+                "{}: el manifiesto no indica tamaño",
+                file.file_name
+            ))
+        })?;
         tasks.push(Task {
             url: file.url.clone(),
             dest,
-            sha1: file.sha1.clone(),
+            sha1: Some(sha1),
             sha256: None,
-            size: file.size,
+            size: Some(size),
         });
     }
     let mut pending = Vec::new();
@@ -217,16 +299,16 @@ async fn download_set(
 }
 
 /// Crea una instancia local a partir de `manifest` y descarga todo lo que
-/// declara (mods, resourcepacks, shaderpacks, configs), verificando SHA-1 y
-/// tamaño cuando el manifiesto los da, y sin volver a bajar lo que ya esté
-/// completo. Si algo falla a mitad, borra la instancia a medias en vez de
-/// dejarla en un estado confuso.
+/// declara (mods, resourcepacks, shaderpacks, configs), verificando siempre
+/// SHA-1 y tamaño, y sin volver a bajar lo que ya esté completo. Si algo falla
+/// a mitad, borra la instancia a medias en vez de dejarla en un estado confuso.
 pub async fn install(
     paths: &NebulaPaths,
     instances: &InstanceStore,
     manifest: &InstanceManifest,
     reporter: &Reporter,
 ) -> Result<InstanceId> {
+    validate_manifest(manifest)?;
     let hosts = hosts_in(manifest)?;
     let host_refs: Vec<&str> = hosts.iter().map(String::as_str).collect();
     let dl = Downloader::new(&host_refs)?;
@@ -246,7 +328,14 @@ pub async fn install(
     let dir = paths.instance_dir(&id);
 
     let result = async {
-        download_set(&dl, &dir.join("mods"), &manifest.mods, reporter, "Descargando mods").await?;
+        download_set(
+            &dl,
+            &dir.join("mods"),
+            &manifest.mods,
+            reporter,
+            "Descargando mods",
+        )
+        .await?;
         download_set(
             &dl,
             &dir.join("resourcepacks"),
@@ -359,7 +448,10 @@ mod tests {
 
     #[test]
     fn validate_code_accepts_and_rejects_like_local_ids() {
-        assert_eq!(validate_code("NBL-K7P2X9").unwrap_or_default(), "NBL-K7P2X9");
+        assert_eq!(
+            validate_code("NBL-K7P2X9").unwrap_or_default(),
+            "NBL-K7P2X9"
+        );
         assert!(validate_code(" nbl-k7p2x9 \n").is_err()); // minúsculas: no es el formato
         assert!(validate_code("../etc/passwd").is_err());
         assert!(validate_code("").is_err());
@@ -410,10 +502,43 @@ mod tests {
         assert_eq!(m.mods[0].file_name, "sodium.jar");
     }
 
+    #[test]
+    fn manifest_requires_hashes_sizes_and_bounded_totals() {
+        let mut m = sample_manifest();
+        m.mods.push(ManifestFile {
+            file_name: "sin-hash.jar".into(),
+            url: "https://x/a.jar".into(),
+            sha1: None,
+            size: Some(1),
+        });
+        assert!(validate_manifest(&m).is_err());
+
+        m.mods[0].sha1 = Some("aa".into());
+        m.mods[0].size = Some(1);
+        assert!(validate_manifest(&m).is_err(), "SHA-1 incompleto");
+
+        m.mods[0].sha1 = Some("a".repeat(40));
+        m.mods[0].size = Some(MAX_FILE_BYTES + 1);
+        assert!(validate_manifest(&m).is_err(), "archivo demasiado grande");
+
+        m.mods.clear();
+        for i in 0..=MAX_MANIFEST_FILES {
+            m.mods.push(ManifestFile {
+                file_name: format!("{i}.jar"),
+                url: "https://x/a.jar".into(),
+                sha1: Some("a".repeat(40)),
+                size: Some(1),
+            });
+        }
+        assert!(validate_manifest(&m).is_err(), "demasiados archivos");
+    }
+
     // ───── servidor falso para fetch_manifest / install de extremo a extremo ─────
 
     async fn route_server(routes: Vec<(&'static str, Vec<u8>)>) -> String {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
         let base = format!("http://{}", listener.local_addr().expect("addr"));
         let routes = std::sync::Arc::new(routes);
         tokio::spawn(async move {
@@ -427,7 +552,10 @@ mod tests {
                     let n = sock.read(&mut buf).await.unwrap_or(0);
                     let req = String::from_utf8_lossy(&buf[..n]).into_owned();
                     let path = req.split_whitespace().nth(1).unwrap_or("/");
-                    let body = routes.iter().find(|(p, _)| *p == path).map(|(_, b)| b.clone());
+                    let body = routes
+                        .iter()
+                        .find(|(p, _)| *p == path)
+                        .map(|(_, b)| b.clone());
                     let (status, body) = match body {
                         Some(b) => ("200 OK", b),
                         None => ("404 Not Found", Vec::new()),
@@ -463,7 +591,10 @@ mod tests {
             .send()
             .await
             .map_err(|e| CoreError::Network(e.to_string()))?;
-        let bytes = resp.bytes().await.map_err(|e| CoreError::Network(e.to_string()))?;
+        let bytes = resp
+            .bytes()
+            .await
+            .map_err(|e| CoreError::Network(e.to_string()))?;
         let manifest: InstanceManifest = serde_json::from_slice(&bytes).expect("parse");
         assert_eq!(manifest.name, "Pack de prueba");
         assert_eq!(manifest.mods.len(), 1);
@@ -498,13 +629,19 @@ mod tests {
             minecraft_version: manifest.minecraft_version.clone(),
             loader: manifest.loader,
             loader_version: manifest.loader_version.clone(),
-            memory: Memory { min_mb: 1024, max_mb: 2048 },
+            memory: Memory {
+                min_mb: 1024,
+                max_mb: 2048,
+            },
             jvm_args: Vec::new(),
         })?;
         let dir = paths.instance_dir(&created.instance.id);
         let reporter = Reporter::silent();
         download_set(&dl, &dir.join("mods"), &manifest.mods, &reporter, "mods").await?;
-        assert_eq!(std::fs::read(dir.join("mods/sodium.jar")).unwrap_or_default(), mod_bytes);
+        assert_eq!(
+            std::fs::read(dir.join("mods/sodium.jar")).unwrap_or_default(),
+            mod_bytes
+        );
 
         // Segunda pasada: ya está completo y verificado, no debe tocar la red
         // (si lo intentara, `https_only`/el host no coincidirían y fallaría).

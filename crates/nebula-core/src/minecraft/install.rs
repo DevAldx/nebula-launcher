@@ -201,12 +201,12 @@ impl Installer {
                     CoreError::Network(format!("manifiesto de versiones inválido: {e}"))
                 })?;
                 // La caché es solo una optimización: si falla escribirla, no es fatal.
-                let _ = filesystem::write_atomic(&self.manifest_cache(), &bytes);
+                let _ = filesystem::write_verified(&self.manifest_cache(), &bytes);
                 Ok(manifest)
             }
             Err(net_err) => {
                 let cache = self.manifest_cache();
-                let bytes = fs::read(&cache).map_err(|_| net_err)?;
+                let bytes = filesystem::read_verified(&cache).ok_or(net_err)?;
                 serde_json::from_slice(&bytes).map_err(|e| CoreError::Json {
                     path: cache,
                     source: e,
@@ -240,7 +240,10 @@ impl Installer {
 
     async fn load_meta(&self, version: &str) -> Result<VersionMeta> {
         let path = version_dir(&self.paths, version).join(format!("{version}.json"));
-        if let Ok(bytes) = fs::read(&path) {
+        // Solo se reutiliza la caché si su hash lateral coincide; así una
+        // modificación o corrupción local no altera la clase principal ni las
+        // librerías que se van a lanzar.
+        if let Some(bytes) = filesystem::read_verified(&path) {
             if let Ok(meta) = serde_json::from_slice::<VersionMeta>(&bytes) {
                 return Ok(meta);
             }
@@ -255,6 +258,8 @@ impl Installer {
         };
         self.dl.download(&task, &|_| {}).await?;
         let bytes = fs::read(&path).map_err(|e| CoreError::io(&path, e))?;
+        // Si falla el hash lateral, la próxima vez se volverá a descargar.
+        let _ = filesystem::write_hash_sidecar(&path, &bytes);
         serde_json::from_slice(&bytes).map_err(|e| CoreError::Json { path, source: e })
     }
 

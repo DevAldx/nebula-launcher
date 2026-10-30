@@ -119,21 +119,27 @@ pub fn import(mods_dir: &Path, files: Vec<ImportFile>) -> Result<Vec<String>> {
     filesystem::create_dir_all(mods_dir)?;
     let mut written = Vec::with_capacity(files.len());
     for file in files {
-        let safe_name = sanitize_import_name(&file.name)?;
-        if file.bytes.len() > MAX_IMPORT_BYTES {
-            return Err(CoreError::invalid(format!(
-                "{safe_name}: supera el tamaño máximo admitido"
-            )));
-        }
-        let dest = unique_path(mods_dir, &safe_name);
-        filesystem::write_atomic(&dest, &file.bytes)?;
-        written.push(
-            dest.file_name()
-                .map(|n| n.to_string_lossy().into_owned())
-                .unwrap_or(safe_name),
-        );
+        written.push(import_one(mods_dir, file)?);
     }
     Ok(written)
+}
+
+/// Importa un único mod. Permite al IPC decodificar y escribir de uno en uno
+/// sin mantener todos los archivos en memoria a la vez.
+pub fn import_one(mods_dir: &Path, file: ImportFile) -> Result<String> {
+    filesystem::create_dir_all(mods_dir)?;
+    let safe_name = sanitize_import_name(&file.name)?;
+    if file.bytes.len() > MAX_IMPORT_BYTES {
+        return Err(CoreError::invalid(format!(
+            "{safe_name}: supera el tamaño máximo admitido"
+        )));
+    }
+    let dest = unique_path(mods_dir, &safe_name);
+    filesystem::write_atomic(&dest, &file.bytes)?;
+    Ok(dest
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or(safe_name))
 }
 
 fn sanitize_import_name(original: &str) -> Result<String> {

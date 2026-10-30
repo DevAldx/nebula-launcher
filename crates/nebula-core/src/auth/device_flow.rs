@@ -69,7 +69,7 @@ pub async fn request_device_code(
         .await
         .map_err(|e| CoreError::Network(e.to_string()))?;
     if !status.is_success() {
-        return Err(describe_oauth_error(status.as_u16(), &text));
+        return Err(describe_oauth_error(status.as_u16(), &text, false));
     }
     let parsed: DeviceCodeResp = serde_json::from_str(&text)
         .map_err(|e| CoreError::Auth(format!("respuesta de Microsoft inesperada: {e}")))?;
@@ -128,7 +128,7 @@ pub async fn poll_once(
         Some("authorization_declined") => Err(CoreError::Auth(
             "se canceló el inicio de sesión en el navegador.".into(),
         )),
-        _ => Err(describe_oauth_error(status.as_u16(), &text)),
+        _ => Err(describe_oauth_error(status.as_u16(), &text, false)),
     }
 }
 
@@ -156,7 +156,7 @@ pub async fn refresh(
         .await
         .map_err(|e| CoreError::Network(e.to_string()))?;
     if !status.is_success() {
-        return Err(describe_oauth_error(status.as_u16(), &text));
+        return Err(describe_oauth_error(status.as_u16(), &text, true));
     }
     let parsed: TokenResp = serde_json::from_str(&text)
         .map_err(|e| CoreError::Auth(format!("respuesta de Microsoft inesperada: {e}")))?;
@@ -171,7 +171,22 @@ pub async fn refresh(
     }
 }
 
-fn describe_oauth_error(status: u16, body: &str) -> CoreError {
+fn describe_oauth_error(status: u16, body: &str, session_expired: bool) -> CoreError {
+    // Un refresh token revocado es definitivo; un timeout o un 5xx no.
+    if let Ok(parsed) = serde_json::from_str::<TokenResp>(body) {
+        if let Some(error) = parsed.error.as_deref() {
+            if session_expired
+                && matches!(
+                    error,
+                    "invalid_grant" | "invalid_token" | "interaction_required" | "consent_required"
+                )
+            {
+                return CoreError::AuthExpired(format!(
+                    "Microsoft rechazó la sesión guardada ({error})"
+                ));
+            }
+        }
+    }
     if body.contains("AADSTS700016") {
         return CoreError::Auth(
             "Microsoft no reconoce ese Client ID. Revisa Configuración > Cuenta: debe ser el \
@@ -348,5 +363,23 @@ mod tests {
         assert!(ep
             .check("http://login.microsoftonline.com/consumers/oauth2/v2.0/token")
             .is_err());
+    }
+
+    #[test]
+    fn only_refresh_treats_invalid_grant_as_expired_session() {
+        let body = r#"{"error":"invalid_grant"}"#;
+        assert!(matches!(
+            describe_oauth_error(400, body, true),
+            CoreError::AuthExpired(_)
+        ));
+        assert!(matches!(
+            describe_oauth_error(400, body, false),
+            CoreError::Auth(_)
+        ));
+        // Un 5xx nunca debe borrar la sesión guardada.
+        assert!(matches!(
+            describe_oauth_error(503, "<html>caído</html>", true),
+            CoreError::Auth(_)
+        ));
     }
 }

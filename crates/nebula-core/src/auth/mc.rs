@@ -113,9 +113,20 @@ pub async fn fetch_profile(
         .into_iter()
         .find(|s| s.state == "ACTIVE")
         .map(|s| normalize_skin_url(&s.url));
+    let username = parsed.name;
+    if username.is_empty()
+        || username.len() > 16
+        || !username
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
+        return Err(CoreError::Auth(
+            "el perfil de Minecraft devolvió un nombre de usuario no válido".into(),
+        ));
+    }
     Ok(Profile {
         uuid: dash_uuid(&parsed.id)?,
-        username: parsed.name,
+        username,
         skin_url,
     })
 }

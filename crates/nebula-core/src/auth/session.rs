@@ -174,12 +174,15 @@ pub async fn resume(
     };
     let tokens = match tokens {
         Ok(t) => t,
-        Err(e) => {
+        Err(CoreError::AuthExpired(e)) => {
             store.clear()?;
             return Err(CoreError::Auth(format!(
                 "tu sesión de Microsoft expiró; inicia sesión de nuevo. ({e})"
             )));
         }
+        // Un timeout, un DNS caído o un 5xx no significan que el refresh token
+        // sea inválido: se conserva para poder reintentar sin volver a entrar.
+        Err(e) => return Err(e),
     };
     let (session, profile) = match flow {
         AuthFlow::Legacy => chain_from_legacy_msa(client, ep, &tokens.access_token).await?,
@@ -422,6 +425,34 @@ mod tests {
         assert_eq!(signed_in.account.username, "Notch");
         assert_eq!(signed_in.account.flow, AuthFlow::Legacy);
         assert_eq!(store.refresh_token()?, Some("new-rt".into()));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn resume_keeps_credentials_on_transient_network_error() -> Result<()> {
+        let tmp = TempDir::new();
+        let store = AccountStore::with_store(
+            tmp.path().join("account.json"),
+            Box::new(MemorySecretStore(Mutex::new(None))),
+        );
+        let account = Account {
+            uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5".into(),
+            username: "Notch".into(),
+            skin_url: None,
+            kind: crate::auth::AccountKind::Microsoft,
+            flow: AuthFlow::Legacy,
+        };
+        store.save("old-rt", &account)?;
+
+        // Puerto cerrado: el fallo es de red, no un refresh token inválido.
+        let ep = AuthEndpoints::for_tests("http://127.0.0.1:1");
+        let client = reqwest::Client::new();
+        let error = match resume(&client, &ep, "", &store).await {
+            Ok(_) => panic!("la conexión no debería funcionar"),
+            Err(error) => error,
+        };
+        assert!(matches!(error, CoreError::Network(_)), "{error}");
+        assert_eq!(store.refresh_token()?, Some("old-rt".into()));
         Ok(())
     }
 }

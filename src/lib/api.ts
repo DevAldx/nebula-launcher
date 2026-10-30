@@ -68,7 +68,8 @@ export const api = {
     call<void>("set_launcher_icon", { mime, dataBase64 }),
   clearLauncherIcon: () => call<void>("clear_launcher_icon"),
   fetchShareManifest: (code: string) => call<InstanceManifest>("fetch_share_manifest", { code }),
-  importFromCode: (code: string) => call<void>("import_from_code", { code }),
+  importFromCode: (manifest: InstanceManifest) =>
+    call<void>("import_from_code", { code: manifest.code, manifest }),
   exportManifestTemplate: (instanceId: string) => call<string>("export_manifest_template", { instanceId }),
   listMods: (instanceId: string) => call<ModEntry[]>("list_mods", { instanceId }),
   setModEnabled: (instanceId: string, fileName: string, enabled: boolean) =>

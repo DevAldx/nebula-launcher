@@ -25,6 +25,10 @@ pub enum CoreError {
     Launch(String),
     #[error("{0}")]
     Auth(String),
+    /// Credenciales rechazadas de forma definitiva (invalid_grant/invalid_token).
+    /// Los errores de red o de servidor no deben borrar la sesión guardada.
+    #[error("{0}")]
+    AuthExpired(String),
 }
 
 impl CoreError {

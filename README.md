@@ -194,7 +194,8 @@ export TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/nebula-launcher.key)"
 
 cd installer && npm install
 npm run tauri build -- --bundles appimage
-# deja el instalador junto al AppImage del launcher antes de ejecutarlo
+# deja el instalador junto al AppImage y su .AppImage.sig antes de ejecutarlo:
+# el instalador verifica la firma minisign antes de copiar nada
 ```
 
 El AppImage prefiere **WebKitGTK 4.1 y GTK 3 del sistema** cuando están
